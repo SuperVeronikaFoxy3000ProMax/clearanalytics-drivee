@@ -19,6 +19,7 @@ from semantic_layer import semantic
 
 
 class LLMError(RuntimeError):
+    pass
 
 
 @dataclass
