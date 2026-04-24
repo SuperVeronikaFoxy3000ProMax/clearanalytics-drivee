@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>InstantData — SQL IDE для non-tech аудитории</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css" />
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar__logo">
+      <span class="logo">Понятная Аналитика</span>
+    </div>
+
+    <button class="btn-new" id="newChatBtn">
+      <span class="btn-new__icon">＋</span>
+      <span>Начать новый чат</span>
+    </button>
+
+    <nav class="sidenav">
+      <a href="#chat" class="sidenav__item is-active" data-view="chat">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Чат</span>
+      </a>
+      <a href="#dictionary" class="sidenav__item" data-view="dictionary">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>Словарь</span>
+      </a>
+      <a href="#charts" class="sidenav__item" data-view="charts">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="8"/><rect x="10" y="7" width="4" height="13"/><rect x="17" y="3" width="4" height="17"/></svg>
+        <span>Отчёты</span>
+      </a>
+    </nav>
+
+    <div class="sidebar__history">
+      <div class="sidebar__title">История (5 последних)</div>
+      <div id="historyList"><div class="history-item__empty">Пока пусто</div></div>
+    </div>
+
+    <div class="sidebar__templates">
+      <div class="sidebar__title">Шаблоны</div>
+      <div class="tmpl-row"><button class="tmpl">Отмены по городам за неделю</button><button class="tmpl-edit" title="Вставить в поле ввода" aria-label="Вставить"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button></div>
+      <div class="tmpl-row"><button class="tmpl">Выручка по месяцам</button><button class="tmpl-edit" title="Вставить в поле ввода" aria-label="Вставить"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button></div>
+      <div class="tmpl-row"><button class="tmpl">Топ-10 водителей</button><button class="tmpl-edit" title="Вставить в поле ввода" aria-label="Вставить"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button></div>
+      <div class="tmpl-row"><button class="tmpl">Эффективность рекламы</button><button class="tmpl-edit" title="Вставить в поле ввода" aria-label="Вставить"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button></div>
+    </div>
+
+    <div class="sidebar__user">
+      <div class="avatar">ИИ</div>
+      <div class="sidebar__userinfo">
+        <span class="sidebar__name">Иван Иванов</span>
+      </div>
+      <button class="icon-btn" id="settingsBtn" title="Настройки">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar__left">
+        <h1 class="topbar__title" id="viewTitle">Чат</h1>
+        <span class="topbar__sub" id="viewSub">Спросите базу данных обычными словами</span>
+      </div>
+      <div class="topbar__right">
+        <div class="status">
+          <span class="status__dot"></span>
+          БД · подключена
+        </div>
+        <button class="btn btn--ghost">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          Помощь
+        </button>
+      </div>
+    </header>
+
+    <!-- =============== CHAT VIEW — BI + CHAT =============== -->
+    <section class="view view--chat is-active" data-view="chat">
+      <div class="workspace">
+
+        <!-- CENTER: BI CANVAS (только графики) -->
+        <div class="workspace__main" id="canvas">
+          <div id="canvasEmpty" class="canvas-empty">
+            <h3>Начните с вопроса →</h3>
+            <p>График появится здесь, объяснение — в панели справа.</p>
+          </div>
+          <div id="canvasBody"></div>
+        </div>
+
+        <!-- RIGHT: CHAT PANEL (диалог + логика + SQL) -->
+        <aside class="workspace__right">
+          <div class="chat-panel">
+            <div class="chat-panel__head">
+              <div class="chat-panel__titlebox">
+                <div class="chat-panel__title">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  Диалог с ИИ
+                </div>
+                <div class="chat-panel__sub">SQL и объяснение логики</div>
+              </div>
+              <button class="link" id="clearThreadBtn" title="Очистить диалог">Очистить</button>
+            </div>
+
+            <div class="chat-scroll">
+              <div class="chat-inner">
+
+                <div class="welcome" id="welcome">
+                  <h3>Здравствуйте, Иван 👋</h3>
+                  <p>С чего начнём? Выберите шаблон или задайте свой вопрос.</p>
+                  <div class="suggest">
+                    <button class="suggest__item"><span class="suggest__icon">📊</span><span>Покажи отмены по городам за прошлую неделю</span></button>
+                    <button class="suggest__item"><span class="suggest__icon">💰</span><span>Выручка по месяцам в 2025</span></button>
+                    <button class="suggest__item"><span class="suggest__icon">🎯</span><span>Топ-10 водителей по количеству поездок</span></button>
+                    <button class="suggest__item"><span class="suggest__icon">📈</span><span>Средний чек по статусам</span></button>
+                  </div>
+                </div>
+
+                <div id="messages" class="messages"></div>
+
+              </div>
+            </div>
+
+            <div class="composer">
+              <div class="composer__inner">
+                <div class="composer__box">
+                  <textarea placeholder="Уточните запрос или задайте новый…" rows="1"></textarea>
+                  <div class="composer__bottom">
+                    <div class="composer__tools">
+                      <button class="icon-btn" title="Выбрать таблицу">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+                      </button>
+                      <button class="icon-btn" title="Шаблон">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                      </button>
+                      <button class="icon-btn" title="Голос">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                      </button>
+                    </div>
+                    <button class="send" title="Отправить (Enter)">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="composer__hint"><span>Enter — отправить · Shift+Enter — новая строка</span></div>
+              </div>
+            </div>
+
+          </div>
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- =============== DICTIONARY VIEW =============== -->
+    <section class="view view--dict" data-view="dictionary">
+      <div class="view__scroll">
+        <div class="view__inner">
+
+          <div class="view__head">
+            <div>
+              <h2>Словарь бизнес-терминов</h2>
+              <p>Семантический слой: как бизнес-понятия превращаются в столбцы и метрики базы данных.</p>
+            </div>
+            <div class="view__actions">
+              <div class="search">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="dictSearch" placeholder="Поиск по термину, столбцу или синониму…"/>
+              </div>
+              <button class="btn btn--primary btn--sm" id="addTermBtn">＋ Добавить термин</button>
+            </div>
+          </div>
+
+          <div class="chips" id="dictChips">
+            <button class="chip is-active" data-kind="">Все</button>
+            <button class="chip" data-kind="metric">Метрики</button>
+            <button class="chip" data-kind="dimension">Измерения</button>
+            <button class="chip" data-kind="id">ID · ключи</button>
+            <button class="chip" data-kind="time">Время</button>
+            <button class="chip" data-kind="status">Статусы</button>
+            <button class="chip" data-kind="trip">Поездка</button>
+            <button class="chip" data-kind="period">Периоды</button>
+            <button class="chip" data-kind="filter">Фильтры</button>
+          </div>
+
+          <div id="dictContainer"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODAL: добавить / редактировать термин -->
+    <div class="modal" id="termModal" hidden>
+      <div class="modal__backdrop" data-close></div>
+      <div class="modal__dialog">
+        <div class="modal__head">
+          <div>
+            <div class="modal__eyebrow" id="termModalEyebrow">Новый термин</div>
+            <h3 class="modal__title" id="termModalTitle">Добавить бизнес-термин</h3>
+          </div>
+          <button class="icon-btn modal__close" data-close title="Закрыть">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="modal__body">
+          <input type="hidden" id="termModalMode" value="add"/>
+
+          <div class="field">
+            <label>Название термина</label>
+            <input type="text" id="fTerm" placeholder="например: Выручка"/>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Тип</label>
+              <select id="fKind">
+                <option value="metric">Метрика</option>
+                <option value="dimension">Измерение</option>
+                <option value="id">ID</option>
+                <option value="time">Время</option>
+                <option value="status">Статус</option>
+                <option value="trip">Поездка</option>
+                <option value="period">Период</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>SQL-выражение / столбец</label>
+              <input type="text" id="fColExpr" placeholder="price_order_local"/>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Описание</label>
+            <textarea id="fDesc" rows="3" placeholder="Как понимать этот термин в контексте бизнеса…"></textarea>
+          </div>
+
+          <div class="field">
+            <label>Синонимы</label>
+            <div class="syn-editor" id="synEditor">
+              <input type="text" class="syn-input" id="synInput" placeholder="добавить синоним, Enter"/>
+            </div>
+            <div class="field__hint">Нажмите Enter чтобы добавить. Синонимы помогают ИИ распознавать разные формулировки пользователей.</div>
+          </div>
+
+          <div class="field">
+            <label class="check">
+              <input type="checkbox" id="fUseInSql" checked/>
+              <span></span>
+              Использовать в автоматической генерации SQL
+            </label>
+          </div>
+
+          <div class="modal__error" id="termModalError" hidden></div>
+        </div>
+
+        <div class="modal__foot">
+          <button class="btn btn--ghost" data-close>Отмена</button>
+          <button class="btn btn--primary" id="termModalSave">Сохранить изменения</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: подтверждение удаления -->
+    <div class="modal" id="deleteModal" hidden>
+      <div class="modal__backdrop" data-close></div>
+      <div class="modal__dialog" style="max-width:440px">
+        <div class="modal__head">
+          <div>
+            <div class="modal__eyebrow">Удаление термина</div>
+            <h3 class="modal__title">Удалить термин?</h3>
+          </div>
+          <button class="icon-btn modal__close" data-close title="Закрыть">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal__body">
+          <p>Термин <b id="deleteTermName"></b> будет удалён из семантического слоя. Это действие нельзя отменить.</p>
+        </div>
+        <div class="modal__foot">
+          <button class="btn btn--ghost" data-close>Отмена</button>
+          <button class="btn btn--danger" id="deleteModalConfirm">Удалить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============== CHARTS VIEW =============== -->
+    <section class="view view--charts" data-view="charts">
+      <div class="view__scroll">
+        <div class="view__inner">
+
+          <div class="view__head">
+            <div>
+              <h2>Сохранённые графики и отчёты</h2>
+              <p>Переиспользуйте отчёты и настраивайте автоматическую рассылку по расписанию.</p>
+            </div>
+            <div class="view__actions">
+              <div class="search">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input placeholder="Поиск по отчётам…"/>
+              </div>
+              <button class="btn btn--primary btn--sm">＋ Новый отчёт</button>
+            </div>
+          </div>
+
+          <div class="chips">
+            <button class="chip is-active">Все отчёты · 12</button>
+            <button class="chip">Мои · 8</button>
+            <button class="chip">По расписанию · 4</button>
+            <button class="chip">Общие</button>
+          </div>
+
+          <div class="reports">
+
+            <!-- Report card 1 -->
+            <article class="report">
+              <div class="report__head">
+                <span class="report__type">Столбчатый</span>
+                <button class="icon-btn" title="Меню">⋯</button>
+              </div>
+              <div class="report__preview">
+                <div class="mini-bars">
+                  <span style="--h:92%"></span><span style="--h:76%"></span><span style="--h:66%"></span>
+                  <span style="--h:77%"></span><span style="--h:62%"></span><span style="--h:52%"></span><span style="--h:28%"></span>
+                </div>
+              </div>
+              <h3>Отмены по городам · неделя</h3>
+              <p>Группировка по city, статус = cancelled, последние 7 дней.</p>
+              <div class="report__foot">
+                <span class="sched">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Пн, 09:00 · еженедельно
+                </span>
+                <span class="report__date">21 апр. 2026</span>
+              </div>
+            </article>
+
+            <!-- Report 2 -->
+            <article class="report">
+              <div class="report__head">
+                <span class="report__type">Линейный</span>
+                <button class="icon-btn">⋯</button>
+              </div>
+              <div class="report__preview">
+                <svg viewBox="0 0 200 80" class="mini-line" preserveAspectRatio="none">
+                  <polyline points="0,60 30,45 60,52 90,30 120,38 150,18 180,25 200,10" fill="none" stroke="#96ea28" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  <polyline points="0,60 30,45 60,52 90,30 120,38 150,18 180,25 200,10 200,80 0,80" fill="url(#grad)" opacity="0.3"/>
+                  <defs>
+                    <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#96ea28"/>
+                      <stop offset="100%" stop-color="#96ea28" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <h3>Выручка по месяцам · 2025</h3>
+              <p>SUM(total) WHERE status='completed', группировка по месяцам.</p>
+              <div class="report__foot">
+                <span class="sched sched--off">Без расписания</span>
+                <span class="report__date">18 апр. 2026</span>
+              </div>
+            </article>
+
+            <!-- Report 3 -->
+            <article class="report">
+              <div class="report__head">
+                <span class="report__type">Круговой</span>
+                <button class="icon-btn">⋯</button>
+              </div>
+              <div class="report__preview">
+                <div class="mini-pie">
+                  <div class="mini-pie__donut"></div>
+                  <span class="mini-pie__val">724</span>
+                </div>
+              </div>
+              <h3>Доля отмен по каналам</h3>
+              <p>app / web / partner — процентное распределение.</p>
+              <div class="report__foot">
+                <span class="sched">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  1-го числа · ежемесячно
+                </span>
+                <span class="report__date">15 апр. 2026</span>
+              </div>
+            </article>
+
+            <!-- Report 4 -->
+            <article class="report">
+              <div class="report__head">
+                <span class="report__type">Area</span>
+                <button class="icon-btn">⋯</button>
+              </div>
+              <div class="report__preview">
+                <svg viewBox="0 0 200 80" class="mini-line" preserveAspectRatio="none">
+                  <polyline points="0,50 20,40 40,55 60,30 80,42 100,25 120,35 140,20 160,28 180,15 200,22 200,80 0,80" fill="#96ea28" opacity="0.4"/>
+                  <polyline points="0,50 20,40 40,55 60,30 80,42 100,25 120,35 140,20 160,28 180,15 200,22" fill="none" stroke="#146414" stroke-width="2"/>
+                </svg>
+              </div>
+              <h3>Активные пользователи · 30д</h3>
+              <p>COUNT(DISTINCT user_id) по дням за последние 30 дней.</p>
+              <div class="report__foot">
+                <span class="sched">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Ежедневно, 08:00
+                </span>
+                <span class="report__date">12 апр. 2026</span>
+              </div>
+            </article>
+
+            <!-- Report 5 -->
+            <article class="report">
+              <div class="report__head">
+                <span class="report__type">Таблица</span>
+                <button class="icon-btn">⋯</button>
+              </div>
+              <div class="report__preview report__preview--table">
+                <div class="mini-table">
+                  <div><span>Водитель</span><span>Поездок</span></div>
+                  <div><span>Иванов А.</span><span class="v">128</span></div>
+                  <div><span>Петров К.</span><span class="v">117</span></div>
+                  <div><span>Сидоров И.</span><span class="v">104</span></div>
+                  <div><span>Кузнецов В.</span><span class="v">91</span></div>
+                </div>
+              </div>
+              <h3>Топ-10 водителей</h3>
+              <p>Группировка по driver_id, сортировка по COUNT DESC.</p>
+              <div class="report__foot">
+                <span class="sched sched--off">Без расписания</span>
+                <span class="report__date">09 апр. 2026</span>
+              </div>
+            </article>
+
+            <!-- Report 6 -->
+            <article class="report">
+              <div class="report__head">
+                <span class="report__type">Столбчатый</span>
+                <button class="icon-btn">⋯</button>
+              </div>
+              <div class="report__preview">
+                <div class="mini-bars">
+                  <span style="--h:40%"></span><span style="--h:55%"></span><span style="--h:72%"></span>
+                  <span style="--h:60%"></span><span style="--h:88%"></span><span style="--h:68%"></span><span style="--h:82%"></span>
+                </div>
+              </div>
+              <h3>Эффективность рекламы</h3>
+              <p>CTR и CR по кампаниям за последние 14 дней.</p>
+              <div class="report__foot">
+                <span class="sched">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Пт, 17:00 · еженедельно
+                </span>
+                <span class="report__date">05 апр. 2026</span>
+              </div>
+            </article>
+
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // ---------- view switching ----------
+  const navItems = document.querySelectorAll('.sidenav__item');
+  const views    = document.querySelectorAll('.view');
+  const titleEl  = document.getElementById('viewTitle');
+  const subEl    = document.getElementById('viewSub');
+  const meta = {
+    chat:       { title: 'Новый чат',               sub: 'Спросите базу данных обычными словами' },
+    dictionary: { title: 'Словарь бизнес-терминов', sub: 'Семантический слой платформы' },
+    charts:     { title: 'Графики и отчёты',        sub: 'Сохранённые визуализации и расписания' },
+  };
+  navItems.forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const v = el.dataset.view;
+      navItems.forEach(n => n.classList.toggle('is-active', n === el));
+      views.forEach(s => s.classList.toggle('is-active', s.dataset.view === v));
+      if (meta[v]) { titleEl.textContent = meta[v].title; subEl.textContent = meta[v].sub; }
+      if (v === 'dictionary') loadDict();
+    });
+  });
+
+  // ---------- helpers ----------
+  const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+  ));
+  const SQL_KW = /\b(SELECT|FROM|WHERE|AND|OR|NOT|NULL|AS|GROUP BY|ORDER BY|LIMIT|COUNT|SUM|AVG|MIN|MAX|DISTINCT|JOIN|ON|LEFT|RIGHT|INNER|BETWEEN|IN|IS|CASE|WHEN|THEN|ELSE|END|INTERVAL|CURRENT_DATE|MONTH|YEAR|DAY)\b/gi;
+  const hlSql = sql => escapeHtml(sql).replace(SQL_KW, '<span class="kw">$1</span>')
+                                      .replace(/'([^']*)'/g, `<span class="str">'$1'</span>`);
+  const fmtTime = () => new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+
+  const UNDERSTANDING_LABELS = {
+    metric: 'Метрика', metric_human: 'Метрика',
+    dimensions: 'Группировка', dimensions_human: 'Группировка',
+    period: 'Период', period_human: 'Период',
+    top_n: 'Топ', sort: 'Сортировка',
+  };
+  function renderInterp(u) {
+    if (!u || !Object.keys(u).length) {
+      return `<div class="interp"><div class="interp__row"><span class="interp__val">—</span></div></div>`;
+    }
+    const rows = [];
+    
+    // Если есть stats_template от LLM — показываем описания для KPI
+    if (u['stats_template']) {
+      const st = u['stats_template'];
+      if (st['description_sum']) {
+        rows.push(`<div class="interp__row"><span class="interp__key">Сумма</span><span class="interp__val">${escapeHtml(st['description_sum'])}</span></div>`);
+      }
+      if (st['description_avg']) {
+        rows.push(`<div class="interp__row"><span class="interp__key">Среднее</span><span class="interp__val">${escapeHtml(st['description_avg'])}</span></div>`);
+      }
+      if (st['description_max']) {
+        rows.push(`<div class="interp__row"><span class="interp__key">Максимум</span><span class="interp__val">${escapeHtml(st['description_max'])}</span></div>`);
+      }
+    }
+    
+    // Показываем logic_path если есть
+    if (u['logic_path']) {
+      rows.push(`<div class="interp__row"><span class="interp__key">Дорожка логики</span><span class="interp__val"><code>${escapeHtml(u['logic_path'])}</code></span></div>`);
+    }
+    
+    // Показываем explanation если есть (но не дублируем в bubble)
+    // if (u['explanation']) {
+    //   rows.push(`<div class="interp__row"><span class="interp__key">Объяснение</span><span class="interp__val">${escapeHtml(u['explanation'])}</span></div>`);
+    // }
+    
+    // Остальные поля understanding
+    for (const [k, v] of Object.entries(u)) {
+      // Пропускаем уже обработанные поля
+      if (['stats_template', 'logic_path', 'explanation'].includes(k)) continue;
+      if (v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length)) continue;
+      const label = UNDERSTANDING_LABELS[k] || k;
+      const val = Array.isArray(v) ? v.join(', ') : String(v);
+      rows.push(`<div class="interp__row"><span class="interp__key">${escapeHtml(label)}</span><span class="interp__val">${escapeHtml(val)}</span></div>`);
+    }
+    
+    return `<div class="interp">${rows.join('') || '<div class="interp__row"><span class="interp__val">—</span></div>'}</div>`;
+  }
+
+  // иконки route: 📝 rule, 🤖 llm, 🤖+📝 rule+llm
+  const ICON_RULE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13l-4 4-2-2"/></svg>';
+  const ICON_LLM  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="8.5" cy="13.5" r="1.2"/><circle cx="15.5" cy="13.5" r="1.2"/><path d="M12 3v4"/><circle cx="12" cy="3" r="1"/></svg>';
+  function renderRouteBadge(route) {
+    if (!route || route === 'unknown') return '';
+    const r = route.toLowerCase();
+    if (r.startsWith('rule+llm')) return `<span class="route-badge route-badge--mix">${ICON_RULE}${ICON_LLM} rule + LLM</span>`;
+    if (r.startsWith('rule'))     return `<span class="route-badge route-badge--rule">${ICON_RULE} по правилу</span>`;
+    if (r.startsWith('llm'))      return `<span class="route-badge route-badge--llm">${ICON_LLM} LLM</span>`;
+    return '';
+  }
+
+  // ---------- rendering: canvas (BI) + thread (full chat) ----------
+  const canvasBody  = document.getElementById('canvasBody');
+  const canvasEmpty = document.getElementById('canvasEmpty');
+  const welcomeEl   = document.getElementById('welcome');
+  const messagesEl  = document.getElementById('messages');
+
+  function pushUser(text) {
+    if (welcomeEl) welcomeEl.style.display = 'none';
+    const el = document.createElement('div');
+    el.className = 'msg msg--user';
+    el.innerHTML = `<div class="msg__bubble">${escapeHtml(text)}</div><div class="msg__meta"><span>Сегодня, ${fmtTime()}</span></div>`;
+    messagesEl.appendChild(el);
+    scrollThread();
+  }
+
+  function pushAssistantLoading() {
+    const el = document.createElement('div');
+    el.className = 'msg msg--assistant';
+    el.innerHTML = `
+      <div class="msg__avatar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+      <div class="msg__content">
+        <div class="msg__head"><span class="msg__name">InstantData</span><span class="confidence">думаю…</span></div>
+        <div class="msg__bubble msg__bubble--assistant">⏳ преобразую вопрос в SQL и выполняю запрос…</div>
+      </div>`;
+    messagesEl.appendChild(el);
+    scrollThread();
+    return el;
+  }
+
+  function setCanvasLoading(query) {
+    canvasEmpty.style.display = 'none';
+    canvasBody.innerHTML = `<div class="bi"><div class="bi__head"><div><div class="bi__eyebrow">Визуализация</div><h2 class="bi__title">${escapeHtml(query)}</h2><div class="bi__sub">выполняется…</div></div></div><div class="placeholder" style="min-height:340px; display:flex; align-items:center; justify-content:center; color:#8892a1;">⏳ Запрос выполняется</div></div>`;
+  }
+
+  function scrollThread() {
+    const box = document.querySelector('.chat-panel .chat-scroll');
+    if (box) box.scrollTop = box.scrollHeight;
+  }
+
+  // короткое человеческое описание логики под запрос
+  function explainHuman(data) {
+    const u = data.understanding || {};
+    const route = data.route || 'unknown';
+    
+    // Если LLM генерировала SQL — используем её объяснение напрямую из logic_path или explanation
+    if (route.startsWith('llm') || route.startsWith('rule+llm')) {
+      // Приоритет: готовое explanation от LLM
+      if (u['explanation']) {
+        return u['explanation'];
+      }
+      
+      // Если есть logic_path — форматируем его в понятный вид
+      if (u['logic_path']) {
+        const lp = u['logic_path'];
+        // Парсим строку вида "Slice: DATE(order_timestamp), Metric: AVG(duration_in_seconds), Filter: status='done'"
+        const sliceMatch = lp.match(/Slice:\s*([^,]+)/);
+        const metricMatch = lp.match(/Metric:\s*([^,]+)/);
+        const filterMatch = lp.match(/Filter:\s*(.+)/);
+        
+        const parts = [];
+
+        // Сначала разрез (Slice) - это ГРУППИРОВКА
+        if (sliceMatch) {
+          const slice = sliceMatch[1].trim();
+          if (slice.includes('DATE(order_timestamp)') || slice.includes('DATE(driverdone_timestamp)')) {
+            parts.push('по датам');
+          } else if (slice.includes('city')) {
+            parts.push('по городам');
+          } else if (slice.includes('status')) {
+            parts.push('по статусам');
+          } else if (slice.includes('driver')) {
+            parts.push('по водителям');
+          } else {
+            parts.push(`в разрезе ${slice}`);
+          }
+        }
+
+        // Потом метрика (Metric) - это АГРЕГАЦИЯ
+        if (metricMatch) {
+          const metric = metricMatch[1].trim();
+          let metricDesc = '';
+
+          if (metric.includes('AVG')) {
+            metricDesc = 'среднее значение';
+            const fieldMatch = metric.match(/\(([^)]+)\)/);
+            if (fieldMatch) {
+              const field = fieldMatch[1];
+              if (field.includes('duration')) metricDesc += ' длительности поездок';
+              else if (field.includes('price') || field.includes('total')) metricDesc += ' стоимости заказов';
+              else if (field.includes('distance')) metricDesc += ' расстояния';
+              else metricDesc += ` показателя ${field}`;
+            }
+          } else if (metric.includes('SUM')) {
+            metricDesc = 'общую сумму';
+            const fieldMatch = metric.match(/\(([^)]+)\)/);
+            if (fieldMatch) {
+              const field = fieldMatch[1];
+              if (field.includes('price') || field.includes('total')) metricDesc += ' заказов';
+              else if (field.includes('tip')) metricDesc += ' чаевых';
+              else metricDesc += ` ${field}`;
+            }
+          } else if (metric.includes('COUNT')) {
+            metricDesc = 'количество';
+            const fieldMatch = metric.match(/\(([^)]+)\)/);
+            if (fieldMatch) {
+              const field = fieldMatch[1];
+              if (field.includes('*')) metricDesc += ' заказов';
+              else if (field.includes('driver')) metricDesc += ' водителей';
+              else if (field.includes('city')) metricDesc += ' городов';
+              else metricDesc += ` ${field}`;
+            }
+          } else if (metric.includes('MAX')) {
+            metricDesc = 'максимальное значение';
+            const fieldMatch = metric.match(/\(([^)]+)\)/);
+            if (fieldMatch) {
+              const field = fieldMatch[1];
+              metricDesc += ` ${field}`;
+            }
+          } else if (metric.includes('MIN')) {
+            metricDesc = 'минимальное значение';
+            const fieldMatch = metric.match(/\(([^)]+)\)/);
+            if (fieldMatch) {
+              const field = fieldMatch[1];
+              metricDesc += ` ${field}`;
+            }
+          }
+
+          if (metricDesc) parts.push(metricDesc);
+        }
+
+        // Фильтр (Filter) - это УСЛОВИЯ
+        if (filterMatch) {
+          const filter = filterMatch[1].trim().toLowerCase();
+          if (filter.includes('done')) parts.push('только завершённые заказы');
+          else if (filter.includes('cancel')) parts.push('только отменённые заказы');
+          else if (filter.includes('month') || filter.includes('interval') || filter.includes('year')) parts.push('за указанный период');
+        }
+        
+        if (parts.length > 0) {
+          return 'Смотрю ' + parts.join(', ') + '.';
+        }
+      }
+      
+      // Fallback: старая логика по полям understanding
+      const parts = [];
+      if (u['агрегация']) {
+        const agg = u['агрегация'];
+        if (agg.includes('AVG')) parts.push('среднее значение');
+        else if (agg.includes('SUM')) parts.push('общую сумму');
+        else if (agg.includes('COUNT')) parts.push('количество');
+      }
+      if (u['разрез']) {
+        const g = u['разрез'].toLowerCase();
+        if (g.includes('city')) parts.push('в разрезе городов');
+        else if (g.includes('date') || g.includes('month')) parts.push('помесячно');
+      }
+      if (parts.length > 0) {
+        return '🔍 Анализирую: ' + parts.join(', ') + '.';
+      }
+    }
+    
+    // Для rule-based запросов — живое объяснение
+    const parts = [];
+    if (u['метрика'])    parts.push(`смотрю на <b>${escapeHtml(u['метрика'])}</b>`);
+    if (u['фильтр'])     parts.push(`отбираю только ${escapeHtml(u['фильтр'])}`);
+    if (u['разрез'])     parts.push(`разбиваю по <b>${escapeHtml(u['разрез'])}</b>`);
+    if (u['период'])     parts.push(`за <b>${escapeHtml(u['период'])}</b>`);
+    if (u['top_n'])      parts.push(`показываю топ-${u['top_n']}`);
+    
+    if (!parts.length) return 'Данные получены из таблицы orders.';
+    return parts.join(', ') + '.';
+  }
+
+  function renderAssistant(el, data) {
+    const pct = Math.round((data.confidence || 0) * 100);
+    const route = data.route || 'unknown';
+    const status = data.status;
+    const routeBadge = renderRouteBadge(route);
+
+    // ---- THREAD (right): полный msg--assistant с Explain + SQL ----
+    let bubble = '';
+    if (status === 'not_recognized') {
+      bubble = 'Не удалось распознать запрос. Попробуйте шаблон или переформулируйте — например «отмены по городам», «выручка по месяцам», «топ-10 водителей».';
+    } else if (status === 'blocked') {
+      bubble = `Запрос <b>заблокирован</b> guardrails: ${escapeHtml(data.error || '')}`;
+    } else if (status === 'error' || status === 'llm_unavailable') {
+      bubble = `Ошибка: ${escapeHtml(data.error || 'неизвестная')}`;
+    } else {
+      bubble = explainHuman(data);
+    }
+
+    let cards = '';
+    if (data.understanding && Object.keys(data.understanding).length && status === 'ok') {
+      cards += `<div class="card"><div class="card__head"><span class="card__label">Как я поняла запрос</span></div>${renderInterp(data.understanding)}</div>`;
+    }
+    if (data.sql) {
+      const lat = data.llm_latency_ms ? ` · ${(data.llm_latency_ms/1000).toFixed(1)}с` : '';
+      cards += `<div class="card"><div class="card__head"><span class="card__label">SQL${lat}</span><div class="card__actions"><button class="link" data-copy='${escapeHtml(data.sql)}'>Скопировать</button></div></div><pre class="sql"><code>${hlSql(data.sql)}</code></pre></div>`;
+    }
+    if (data.warnings && data.warnings.length) {
+      cards += `<div class="card"><div class="card__head"><span class="card__label">Предупреждения</span></div><div class="interp">${data.warnings.map(w=>`<div class="interp__row"><span class="interp__val">⚠︎ ${escapeHtml(w)}</span></div>`).join('')}</div></div>`;
+    }
+
+    el.innerHTML = `
+      <div class="msg__avatar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+      <div class="msg__content">
+        <div class="msg__head">
+          <span class="msg__name">InstantData</span>
+          ${routeBadge}
+          <span class="confidence"><span class="confidence__bar"><span style="--w:${pct}%"></span></span>достоверность ${pct}%</span>
+          <span class="msg__time">${fmtTime()}</span>
+        </div>
+        <div class="msg__bubble msg__bubble--assistant">${bubble}</div>
+        ${cards}
+      </div>`;
+
+    el.querySelectorAll('button.link[data-copy]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(btn.dataset.copy).then(() => {
+          const old = btn.textContent; btn.textContent = 'Скопировано ✓';
+          setTimeout(() => btn.textContent = old, 1500);
+        });
+      });
+    });
+    scrollThread();
+
+    // ---- CANVAS (center): только BI-блок с графиком и таблицей ----
+    if (status === 'ok' && data.data && data.data.length) {
+      renderCanvasBI(data);
+    } else {
+      canvasEmpty.style.display = 'flex';
+      canvasEmpty.innerHTML = `<h3>${status === 'not_recognized' ? 'Запрос не распознан' : status === 'blocked' ? 'Запрос заблокирован' : 'Нет данных'}</h3><p>Подробности — в диалоге справа.</p>`;
+      canvasBody.innerHTML = '';
+    }
+  }
+
+  const CHART_LABELS = { bar: 'Столбчатый', line: 'Линейный', pie: 'Круговой', area: 'Area', table: 'Таблица' };
+  const CHART_ICONS = {
+    bar:   '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="8"/><rect x="10" y="7" width="4" height="13"/><rect x="17" y="3" width="4" height="17"/></svg>',
+    line:  '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/></svg>',
+    pie:   '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12A9 9 0 1 1 12 3v9z"/></svg>',
+    area:  '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8v14H3z"/></svg>',
+    table: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="4" x2="9" y2="20"/></svg>',
+  };
+
+  let currentData = null;
+  let currentChartId = '';
+  let currentChartType = 'bar';
+
+  function renderCanvasBI(data) {
+    canvasEmpty.style.display = 'none';
+    currentData = data;
+    // защита от устаревших/неподдерживаемых типов: kpi и прочее → bar
+    const rec = data.recommended_chart;
+    currentChartType = (rec && CHART_LABELS[rec]) ? rec : 'bar';
+    currentChartId = 'plot_' + Math.random().toString(36).slice(2, 9);
+    const cols = data.columns;
+
+    // KPI-блок удалён по требованию — недостаточно информативен
+    const kpis = '';
+
+    // селект типа графика
+    const selectOptions = Object.keys(CHART_LABELS).map(t =>
+      `<button class="select__option${t === currentChartType ? ' is-active' : ''}" data-type="${t}">${CHART_ICONS[t]}${CHART_LABELS[t]}</button>`
+    ).join('');
+
+    // таблица
+    const header = cols.map(c => `<th>${escapeHtml(c)}</th>`).join('');
+    const rows = data.data.slice(0, 100).map(r =>
+      `<tr>${cols.map(c => {
+        const v = r[c];
+        const cls = typeof v === 'number' ? ' class="num"' : '';
+        const disp = typeof v === 'number' ? v.toLocaleString('ru-RU') : escapeHtml(v);
+        return `<td${cls}>${disp}</td>`;
+      }).join('')}</tr>`
+    ).join('');
+
+    canvasBody.innerHTML = `
+      <div class="bi">
+        <div class="bi__head">
+          <div>
+            <div class="bi__eyebrow">Визуализация</div>
+            <h2 class="bi__title">${escapeHtml(data.query)}</h2>
+            <div class="bi__sub">${data.rows} строк · ${cols.length} колонок · источник: orders</div>
+          </div>
+          <div class="card__actions">
+            <div class="select" id="chartSelect">
+              <button class="select__trigger" id="chartSelectTrigger">
+                ${CHART_ICONS[currentChartType]}
+                <span id="chartSelectLabel">${CHART_LABELS[currentChartType]}</span>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="select__menu" id="chartSelectMenu">${selectOptions}</div>
+            </div>
+            <button class="btn btn--sm btn--primary" id="exportBtn">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Экспорт отчёта
+            </button>
+            <div class="export-panel" id="exportPanel" hidden>
+              <div class="export-panel__title">Экспортировать как отчёт</div>
+              <div class="export-panel__opts">
+                <button data-fmt="pdf"><span class="ext">PDF</span>Отчёт с графиком и SQL</button>
+                <button data-fmt="png"><span class="ext">PNG</span>Только график</button>
+                <button data-fmt="csv"><span class="ext">CSV</span>Данные в таблице</button>
+                <button data-fmt="xlsx"><span class="ext">XLSX</span>Excel-файл</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        ${kpis}
+        <div class="chart" id="${currentChartId}"></div>
+        <div class="bi__legend"><span class="legend-item"><span class="legend-dot legend-dot--accent"></span>${escapeHtml(cols[cols.length-1])}</span></div>
+        <div class="bi__table-wrap">
+          <div class="bi__table-head">
+            <span>Данные запроса · ${data.rows} ${data.rows > 100 ? '(показано 100)' : ''}</span>
+            <div class="bi__table-tools">
+              <button class="link" data-fmt="csv">CSV</button>
+              <button class="link" data-fmt="xlsx">XLSX</button>
+            </div>
+          </div>
+          <div class="data-table-scroll">
+            <table class="data-table">
+              <thead><tr>${header}</tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+
+    renderPlot(currentChartId, data, currentChartType);
+    wireCanvasInteractions();
+
+    canvasBody.parentElement.scrollTop = 0;
+  }
+
+  function wireCanvasInteractions() {
+    // ---- chart type selector ----
+    const trigger = document.getElementById('chartSelectTrigger');
+    const menu    = document.getElementById('chartSelectMenu');
+    const label   = document.getElementById('chartSelectLabel');
+    if (trigger && menu) {
+      trigger.addEventListener('click', (e) => { e.stopPropagation(); menu.classList.toggle('is-open'); });
+      menu.querySelectorAll('.select__option').forEach(opt => {
+        opt.addEventListener('click', () => {
+          const type = opt.dataset.type;
+          currentChartType = type;
+          menu.querySelectorAll('.select__option').forEach(o => o.classList.remove('is-active'));
+          opt.classList.add('is-active');
+          label.textContent = CHART_LABELS[type];
+          trigger.firstElementChild.outerHTML = CHART_ICONS[type];
+          menu.classList.remove('is-open');
+          renderPlot(currentChartId, currentData, type);
+        });
+      });
+    }
+
+    // ---- export panel ----
+    const exportBtn   = document.getElementById('exportBtn');
+    const exportPanel = document.getElementById('exportPanel');
+    if (exportBtn && exportPanel) {
+      exportBtn.addEventListener('click', (e) => { e.stopPropagation(); exportPanel.hidden = !exportPanel.hidden; });
+      exportPanel.querySelectorAll('button[data-fmt]').forEach(b => {
+        b.addEventListener('click', () => { doExport(b.dataset.fmt); exportPanel.hidden = true; });
+      });
+    }
+    // click outside = close
+    document.addEventListener('click', closeDropdowns);
+
+    // ---- table CSV/XLSX buttons ----
+    document.querySelectorAll('.bi__table-tools button[data-fmt]').forEach(b => {
+      b.addEventListener('click', () => doExport(b.dataset.fmt));
+    });
+  }
+
+  function closeDropdowns() {
+    document.querySelectorAll('.select__menu.is-open').forEach(m => m.classList.remove('is-open'));
+    const p = document.getElementById('exportPanel'); if (p) p.hidden = true;
+  }
+
+  function doExport(fmt) {
+    if (!currentData) return;
+    const cols = currentData.columns;
+    const rows = currentData.data;
+    const ts = new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
+    const base = `drivee_${ts}`;
+
+    if (fmt === 'csv' || fmt === 'xlsx') {
+      // UTF-8 CSV with BOM (Excel-friendly). Для XLSX-кнопки выдаём .csv с тем же содержимым
+      // (Excel откроет как таблицу); полноценный .xlsx потребует lib — за MVP достаточно CSV.
+      const esc = v => {
+        if (v === null || v === undefined) return '';
+        const s = String(v);
+        return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      const sep = fmt === 'xlsx' ? ';' : ',';
+      const body = [cols.join(sep), ...rows.map(r => cols.map(c => esc(r[c])).join(sep))].join('\r\n');
+      const blob = new Blob(['\uFEFF' + body], { type: 'text/csv;charset=utf-8' });
+      download(blob, `${base}.${fmt === 'xlsx' ? 'csv' : 'csv'}`);
+      return;
+    }
+    if (fmt === 'png') {
+      if (window.Plotly && document.getElementById(currentChartId)) {
+        Plotly.downloadImage(currentChartId, { format: 'png', filename: base, width: 1200, height: 700 });
+      }
+      return;
+    }
+    if (fmt === 'pdf') {
+      // print-to-PDF: открываем простое окно с заголовком + SQL + копией canvas
+      const w = window.open('', '_blank');
+      const sql = currentData.sql || '';
+      w.document.write(`<html><head><meta charset="utf-8"><title>${base}.pdf</title>
+        <style>body{font-family:system-ui,Inter,sans-serif;padding:24px;color:#111}
+        h1{font-size:18px;margin:0 0 8px}p{color:#666;margin:0 0 16px}pre{background:#f5f7fa;padding:12px;border-radius:8px;font-size:12px;overflow:auto}
+        table{border-collapse:collapse;width:100%;margin-top:16px;font-size:12px}
+        th,td{border:1px solid #ddd;padding:6px 10px;text-align:left}th{background:#f5f7fa}</style></head><body>
+        <h1>${escapeHtml(currentData.query || '')}</h1>
+        <p>${rows.length} строк · ${cols.length} колонок · ${new Date().toLocaleString('ru-RU')}</p>
+        <pre>${escapeHtml(sql)}</pre>
+        <table><thead><tr>${cols.map(c=>`<th>${escapeHtml(c)}</th>`).join('')}</tr></thead>
+        <tbody>${rows.slice(0,500).map(r=>`<tr>${cols.map(c=>`<td>${escapeHtml(r[c] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table>
+        <script>window.onload=()=>window.print()<\/script>
+        </body></html>`);
+      w.document.close();
+      return;
+    }
+  }
+
+  function download(blob, filename) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  }
+
+  function renderPlot(id, data, typeOverride) {
+    let chart = typeOverride || data.recommended_chart || 'bar';
+    if (!CHART_LABELS[chart] && chart !== 'kpi') chart = 'bar';
+    const cols = data.columns;
+    const target = document.getElementById(id);
+    if (!target) return;
+
+    if (chart === 'kpi') {
+      const val = data.data[0][cols[cols.length - 1]];
+      const disp = typeof val === 'number' ? val.toLocaleString('ru-RU') : val;
+      target.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:360px;"><div style="font-size:13px; color:#6b7280; text-transform:uppercase; letter-spacing:.12em; font-weight:600;">${escapeHtml(cols[cols.length-1])}</div><div style="font-size:72px; font-weight:800; color:#146414; margin-top:10px;">${escapeHtml(disp)}</div></div>`;
+      return;
+    }
+    if (chart === 'table') {
+      target.innerHTML = '<div style="padding:36px; text-align:center; color:#8892a1;">Таблица с данными — ниже ↓</div>';
+      return;
+    }
+    if (cols.length < 2) {
+      target.innerHTML = '<div style="padding:36px; text-align:center; color:#8892a1;">Недостаточно колонок для графика</div>';
+      return;
+    }
+
+    const x = data.data.map(r => r[cols[0]]);
+    const y = data.data.map(r => r[cols[1]]);
+    const layoutBase = {
+      margin: { t: 16, l: 60, r: 20, b: 60 },
+      font: { family: 'Inter, system-ui, sans-serif', size: 12, color: '#2a2f36' },
+      plot_bgcolor: '#fff', paper_bgcolor: '#fff',
+      showlegend: false,
+    };
+    let trace;
+    if (chart === 'line') {
+      trace = { x, y, type: 'scatter', mode: 'lines+markers', line: { color: '#146414', width: 3 }, marker: { color: '#96ea28', size: 9 }, name: cols[1] };
+    } else if (chart === 'area') {
+      trace = { x, y, type: 'scatter', mode: 'lines', fill: 'tozeroy', line: { color: '#146414', width: 2 }, fillcolor: 'rgba(150,234,40,0.35)', name: cols[1] };
+    } else if (chart === 'pie') {
+      trace = { labels: x, values: y, type: 'pie', textinfo: 'label+percent',
+        marker: { colors: ['#146414','#96ea28','#3d6e0e','#5aa320','#2a4f08','#b4f36c','#7ec41a','#1a7a1a','#c9e89c','#4f8a14','#88d043','#264d06'] } };
+    } else { // bar
+      trace = { x, y, type: 'bar', marker: { color: '#96ea28', line: { color: '#146414', width: 1 } }, name: cols[1] };
+    }
+    const layout = (chart === 'pie') ? layoutBase : {
+      ...layoutBase,
+      xaxis: { title: cols[0], gridcolor: '#eef0f2' },
+      yaxis: { title: cols[1], gridcolor: '#eef0f2' },
+    };
+    Plotly.newPlot(id, [trace], layout, { displayModeBar: false, responsive: true });
+  }
+
+  // ---------- submit ----------
+  const textarea = document.querySelector('.composer textarea');
+  const sendBtn  = document.querySelector('.composer .send');
+
+  // ---------- history FIFO-5 (localStorage) ----------
+  const HISTORY_KEY = 'drivee.history';
+  const historyListEl = document.getElementById('historyList');
+  function loadHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch { return []; } }
+  function saveHistory(arr) { localStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(0, 5))); }
+  function pushHistory(q) {
+    let h = loadHistory().filter(x => x !== q);
+    h.unshift(q);
+    saveHistory(h);
+    renderHistory();
+  }
+  function renderHistory() {
+    const h = loadHistory();
+    if (!h.length) { historyListEl.innerHTML = '<div class="history-item__empty">Пока пусто</div>'; return; }
+    const pencil = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+    historyListEl.innerHTML = h.map(q =>
+      `<div class="history-row"><button class="history-item" title="${escapeHtml(q)}">${escapeHtml(q)}</button><button class="history-edit" title="Вставить в поле ввода" aria-label="Вставить">${pencil}</button></div>`
+    ).join('');
+    historyListEl.querySelectorAll('.history-row').forEach((row, i) => {
+      row.querySelector('.history-item').addEventListener('click', () => sendQuery(h[i]));
+      row.querySelector('.history-edit').addEventListener('click', (e) => {
+        e.stopPropagation();
+        prefillComposer(h[i]);
+      });
+    });
+  }
+  renderHistory();
+
+  async function sendQuery(q) {
+    q = (q || '').trim();
+    if (!q) return;
+    pushUser(q);
+    pushHistory(q);
+    textarea.value = '';
+    setCanvasLoading(q);
+    const loadingEl = pushAssistantLoading();
+    try {
+      const r = await fetch('/ask?query=' + encodeURIComponent(q));
+      const data = await r.json();
+      data.query = q;
+      renderAssistant(loadingEl, data);
+    } catch (e) {
+      renderAssistant(loadingEl, { status: 'error', error: String(e), query: q, confidence: 0 });
+    }
+  }
+
+  sendBtn.addEventListener('click', () => sendQuery(textarea.value));
+  textarea.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQuery(textarea.value); }
+  });
+
+  // прокидывает текст в composer без отправки
+  function prefillComposer(text) {
+    textarea.value = text;
+    textarea.focus();
+    try { textarea.setSelectionRange(text.length, text.length); } catch {}
+  }
+
+  // suggestion + template buttons → прямая отправка
+  document.querySelectorAll('.suggest__item, .tmpl').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const text = btn.textContent.trim().replace(/^[^\wа-яА-Я]+/, '');
+      sendQuery(text);
+    });
+  });
+
+  // ✎ возле шаблонов — только вставка в поле
+  document.querySelectorAll('.tmpl-row').forEach(row => {
+    const edit = row.querySelector('.tmpl-edit');
+    const tmpl = row.querySelector('.tmpl');
+    if (edit && tmpl) {
+      edit.addEventListener('click', (e) => {
+        e.stopPropagation();
+        prefillComposer(tmpl.textContent.trim().replace(/^[^\wа-яА-Я]+/, ''));
+      });
+    }
+  });
+
+  // new chat — clear canvas + thread + show welcome
+  function resetChat() {
+    canvasBody.innerHTML = '';
+    messagesEl.innerHTML = '';
+    canvasEmpty.style.display = 'flex';
+    canvasEmpty.innerHTML = `<h3>Начните с вопроса →</h3><p>График появится здесь, объяснение — в панели справа.</p>`;
+    if (welcomeEl) welcomeEl.style.display = '';
+  }
+  document.getElementById('newChatBtn').addEventListener('click', () => {
+    document.querySelector('.sidenav__item[data-view="chat"]').click();
+    resetChat();
+  });
+  document.getElementById('clearThreadBtn').addEventListener('click', resetChat);
+
+  // status dot → /health
+  async function pingHealth() {
+    try {
+      const r = await fetch('/health');
+      const j = await r.json();
+      const ok = j.db?.ok;
+      document.querySelectorAll('.status').forEach(s => {
+        s.innerHTML = `<span class="status__dot" style="${ok?'':'background:#c00;'}"></span>БД · ${ok ? 'подключена' : 'недоступна'}`;
+      });
+    } catch {}
+  }
+  pingHealth();
+
+  // =====================================================
+  // DICTIONARY — динамическая загрузка из /semantic-layer
+  // =====================================================
+
+  // Полный семантический слой — fallback если API недоступен
+  const FULL_SEMANTIC = [
+    { term:'Город (ID)',             kind:'id',        column_expr:'city_id',                      agg:null, filter_sql:null, synonyms:['город','city','регион'],                              is_user_added:false },
+    { term:'Часовой пояс',           kind:'id',        column_expr:'offset_hours',                 agg:null, filter_sql:null, synonyms:['UTC','timezone','пояс'],                              is_user_added:false },
+    { term:'Заказ',                  kind:'id',        column_expr:'order_id',                     agg:null, filter_sql:null, synonyms:['заказ','order','поездка'],                            is_user_added:false },
+    { term:'Тендер',                 kind:'id',        column_expr:'tender_id',                    agg:null, filter_sql:null, synonyms:['тендер','подбор','аукцион'],                          is_user_added:false },
+    { term:'Пользователь (клиент)',  kind:'id',        column_expr:'user_id',                      agg:null, filter_sql:null, synonyms:['клиент','user','пассажир'],                           is_user_added:false },
+    { term:'Водитель',               kind:'id',        column_expr:'driver_id',                    agg:null, filter_sql:null, synonyms:['водитель','driver','исполнитель'],                    is_user_added:false },
+    { term:'Статус заказа',          kind:'status',    column_expr:'status_order',                 agg:null, filter_sql:null, synonyms:['статус','отмена','выполнен','cancelled','completed'], is_user_added:false },
+    { term:'Статус тендера',         kind:'status',    column_expr:'status_tender',                agg:null, filter_sql:null, synonyms:['подбор','тендер','auction'],                          is_user_added:false },
+    { term:'Создание заказа',        kind:'time',      column_expr:'order_timestamp',              agg:null, filter_sql:null, synonyms:['создан','заказан','created_at'],                      is_user_added:false },
+    { term:'Начало тендера',         kind:'time',      column_expr:'tender_timestamp',             agg:null, filter_sql:null, synonyms:['подбор','tender'],                                   is_user_added:false },
+    { term:'Принятие водителем',     kind:'time',      column_expr:'driveraccept_timestamp',       agg:null, filter_sql:null, synonyms:['accept','назначен','взял заказ'],                     is_user_added:false },
+    { term:'Прибытие водителя',      kind:'time',      column_expr:'driverarrived_timestamp',      agg:null, filter_sql:null, synonyms:['подача','arrived','приехал'],                         is_user_added:false },
+    { term:'Начало поездки',         kind:'time',      column_expr:'driverstarttheride_timestamp', agg:null, filter_sql:null, synonyms:['start','поехали','старт'],                            is_user_added:false },
+    { term:'Завершение поездки',     kind:'time',      column_expr:'driverdone_timestamp',         agg:null, filter_sql:null, synonyms:['done','completed','финиш','закончилась'],              is_user_added:false },
+    { term:'Отмена клиентом',        kind:'time',      column_expr:'clientcancel_timestamp',       agg:null, filter_sql:null, synonyms:['клиент отменил','client cancel'],                     is_user_added:false },
+    { term:'Отмена водителем',       kind:'time',      column_expr:'drivercancel_timestamp',       agg:null, filter_sql:null, synonyms:['водитель отменил','driver cancel'],                   is_user_added:false },
+    { term:'Последнее изменение',    kind:'time',      column_expr:'order_modified_local',         agg:null, filter_sql:null, synonyms:['updated','изменён'],                                  is_user_added:false },
+    { term:'Отмена до принятия',     kind:'time',      column_expr:'cancel_before_accept_local',   agg:null, filter_sql:null, synonyms:['pre-accept cancel','быстрая отмена'],                 is_user_added:false },
+    { term:'Расстояние',             kind:'trip',      column_expr:'distance_in_meters',           agg:null, filter_sql:null, synonyms:['дистанция','distance','км','метры'],                  is_user_added:false },
+    { term:'Длительность',           kind:'trip',      column_expr:'duration_in_seconds',          agg:null, filter_sql:null, synonyms:['время поездки','duration','секунды','минуты'],        is_user_added:false },
+    { term:'Стоимость заказа',       kind:'trip',      column_expr:'price_order_local',            agg:null, filter_sql:null, synonyms:['цена','price','итог','стоимость'],                    is_user_added:false },
+    { term:'Стоимость тендера',      kind:'trip',      column_expr:'price_tender_local',           agg:null, filter_sql:null, synonyms:['тендерная цена','tender price'],                      is_user_added:false },
+    { term:'Стартовая стоимость',    kind:'trip',      column_expr:'price_start_local',            agg:null, filter_sql:null, synonyms:['начальная цена','start price'],                       is_user_added:false },
+    { term:'Отмены',                 kind:'metric',    column_expr:'status_order',                 agg:"COUNT(*)",            filter_sql:"status_order = 'cancel'",                            synonyms:['отмена','отменен','canceled','cancel'],          is_user_added:false },
+    { term:'Поездки',                kind:'metric',    column_expr:'status_order',                 agg:"COUNT(*)",            filter_sql:"status_order = 'done'",                              synonyms:['поездка','заказ','заказы','ride','trips'],       is_user_added:false },
+    { term:'Выручка',                kind:'metric',    column_expr:'price_order_local',            agg:"SUM(price_order_local)", filter_sql:"price_order_local IS NOT NULL AND status_order = 'done'", synonyms:['доход','revenue','оборот','sales','gmv'], is_user_added:false },
+    { term:'Средняя цена',           kind:'metric',    column_expr:'price_order_local',            agg:"AVG(price_order_local)", filter_sql:"price_order_local IS NOT NULL",                   synonyms:['цена','price','средний чек','стоимость'],        is_user_added:false },
+    { term:'Город',                  kind:'dimension', column_expr:'city_id',                      agg:null, filter_sql:null, synonyms:['города','city','cities','по городам'],                is_user_added:false },
+    { term:'Дата',                   kind:'dimension', column_expr:'DATE(order_timestamp)',         agg:null, filter_sql:null, synonyms:['день','дни','date','по датам','по дням'],             is_user_added:false },
+  ];
+
+  const KIND_LABELS = { metric:'Метрика', dimension:'Измерение', period:'Период', filter:'Фильтр', id:'ID', time:'Время', trip:'Поездка', status:'Статус' };
+  const KIND_CSS    = { metric:'metric',  dimension:'dim',       period:'period', filter:'filter', id:'id', time:'time',  trip:'trip',    status:'status' };
+
+  let dictAllTerms = [];
+  let dictKindFilter = '';
+  let dictSearchQ = '';
+  let deleteTargetTerm = '';
+
+  // modal helpers
+  const openModal  = (m) => { m.hidden = false; document.body.style.overflow = 'hidden'; };
+  const closeModal = (m) => { m.hidden = true;  document.body.style.overflow = ''; };
+  document.querySelectorAll('.modal [data-close]').forEach(el => el.addEventListener('click', () => closeModal(el.closest('.modal'))));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal').forEach(m => { if (!m.hidden) closeModal(m); }); });
+
+  function kindBadge(kind) {
+    return `<span class="term__kind term__kind--${KIND_CSS[kind]||'dim'}">${escapeHtml(KIND_LABELS[kind]||kind)}</span>`;
+  }
+
+  const EDIT_SVG = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`;
+  const DEL_SVG  = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+
+  function termCard(t) {
+    const sqlExpr = t.agg || t.column_expr;
+    const desc = t.filter_sql ? `Фильтр: <code>${escapeHtml(t.filter_sql)}</code>` : `Колонка: <code>${escapeHtml(t.column_expr)}</code>`;
+    const syns = (t.synonyms||[]).map(s=>`<span class="syn-tag">${escapeHtml(s)}</span>`).join('');
+    return `<article class="term" data-term="${escapeHtml(t.term)}">
+      <div class="term__head">
+        ${kindBadge(t.kind)}
+        <span class="term__sql">${escapeHtml(sqlExpr)}</span>
+        <button class="term__edit" data-term="${escapeHtml(t.term)}" title="Редактировать термин">${EDIT_SVG}</button>
+      </div>
+      <h3>${escapeHtml(t.term)}</h3>
+      <p>${desc}</p>
+      ${syns ? `<div class="syn">${syns}</div>` : ''}
+    </article>`;
+  }
+
+  const SECTIONS = [
+    { label:'Общие поля · идентификаторы', kinds:['id'] },
+    { label:'Статусы',                     kinds:['status'] },
+    { label:'Временные поля',              kinds:['time'] },
+    { label:'Метрики поездки',             kinds:['trip'] },
+    { label:'Агрегаты и бизнес-метрики',   kinds:['metric','dimension','filter','period'] },
+  ];
+
+  function renderDictContainer(terms) {
+    const container = document.getElementById('dictContainer');
+    if (!terms.length) { container.innerHTML = '<div class="dict-grid"><div class="dict-empty">Ничего не найдено</div></div>'; return; }
+    if (dictKindFilter || dictSearchQ) {
+      container.innerHTML = `<div class="dict-grid">${terms.map(termCard).join('')}</div>`;
+    } else {
+      const knownKinds = SECTIONS.flatMap(s=>s.kinds);
+      let html = SECTIONS.map(sec => {
+        const st = terms.filter(t=>sec.kinds.includes(t.kind));
+        return st.length ? `<div class="dict-section"><div class="dict-section__title">${escapeHtml(sec.label)}</div><div class="dict-grid">${st.map(termCard).join('')}</div></div>` : '';
+      }).join('');
+      const rest = terms.filter(t=>!knownKinds.includes(t.kind));
+      if (rest.length) html += `<div class="dict-section"><div class="dict-section__title">Прочее</div><div class="dict-grid">${rest.map(termCard).join('')}</div></div>`;
+      container.innerHTML = html;
+    }
+    container.querySelectorAll('.term__edit').forEach(btn=>btn.addEventListener('click',()=>openEditModal(btn.dataset.term)));
+  }
+
+  function applyDictFilters() {
+    let terms = dictAllTerms;
+    if (dictKindFilter) terms = terms.filter(t=>t.kind===dictKindFilter);
+    if (dictSearchQ) {
+      const q = dictSearchQ.toLowerCase();
+      terms = terms.filter(t=>
+        t.term.toLowerCase().includes(q) ||
+        t.column_expr.toLowerCase().includes(q) ||
+        (t.agg||'').toLowerCase().includes(q) ||
+        (t.synonyms||[]).some(s=>s.toLowerCase().includes(q))
+      );
+    }
+    renderDictContainer(terms);
+  }
+
+  async function loadDict() {
+    document.getElementById('dictContainer').innerHTML = '<div class="dict-grid"><div class="dict-loading">Загрузка словаря…</div></div>';
+    try {
+      const r = await fetch('/semantic-layer');
+      if (!r.ok) throw new Error();
+      const j = await r.json();
+      const apiTerms = j.terms || [];
+      const apiNames = new Set(apiTerms.map(t=>t.term.toLowerCase()));
+      dictAllTerms = [...apiTerms, ...FULL_SEMANTIC.filter(t=>!apiNames.has(t.term.toLowerCase()))];
+    } catch {
+      dictAllTerms = FULL_SEMANTIC;
+    }
+    applyDictFilters();
+  }
+
+  // автозагрузка если открыли страницу сразу на словаре
+  if (location.hash === '#dictionary') loadDict();
+
+  document.getElementById('dictChips').addEventListener('click', e => {
+    const chip = e.target.closest('.chip'); if (!chip) return;
+    document.querySelectorAll('#dictChips .chip').forEach(c=>c.classList.remove('is-active'));
+    chip.classList.add('is-active');
+    dictKindFilter = chip.dataset.kind;
+    applyDictFilters();
+  });
+  document.getElementById('dictSearch').addEventListener('input', e => { dictSearchQ = e.target.value.trim(); applyDictFilters(); });
+
+  // ---- syn-chip helpers ----
+  function getSynonymsFromEditor() {
+    return [...document.querySelectorAll('#synEditor .syn-chip')].map(c =>
+      c.childNodes[0].textContent.trim()
+    ).filter(Boolean);
+  }
+
+  function clearSynEditor() {
+    document.querySelectorAll('#synEditor .syn-chip').forEach(c => c.remove());
+  }
+
+  function addSynChip(val) {
+    const editor = document.getElementById('synEditor');
+    const input  = document.getElementById('synInput');
+    const chip = document.createElement('span');
+    chip.className = 'syn-chip';
+    chip.innerHTML = escapeHtml(val) + '<button class="syn-chip__x" type="button">×</button>';
+    editor.insertBefore(chip, input);
+  }
+
+  document.addEventListener('click', e => {
+    if (e.target.classList.contains('syn-chip__x')) e.target.closest('.syn-chip')?.remove();
+  });
+
+  document.getElementById('synInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.value.trim()) {
+      e.preventDefault();
+      addSynChip(e.target.value.trim());
+      e.target.value = '';
+    }
+  });
+
+  // ---- ADD / EDIT MODAL ----
+  const termModal = document.getElementById('termModal');
+
+  function openAddModal() {
+    document.getElementById('termModalEyebrow').textContent = 'Новый термин';
+    document.getElementById('termModalTitle').textContent   = 'Добавить бизнес-термин';
+    document.getElementById('termModalMode').value = 'add';
+    document.getElementById('fTerm').value    = '';
+    document.getElementById('fKind').value    = 'metric';
+    document.getElementById('fColExpr').value = '';
+    document.getElementById('fDesc').value    = '';
+    document.getElementById('fUseInSql').checked = true;
+    clearSynEditor();
+    document.getElementById('termModalError').hidden = true;
+    openModal(termModal);
+  }
+
+  function openEditModal(termName) {
+    const t = dictAllTerms.find(x => x.term === termName);
+    if (!t) return;
+    document.getElementById('termModalEyebrow').textContent = 'Редактирование термина';
+    document.getElementById('termModalTitle').textContent   = t.term;
+    document.getElementById('termModalMode').value = 'edit:' + termName;
+    document.getElementById('fTerm').value    = t.term;
+    document.getElementById('fKind').value    = t.kind;
+    document.getElementById('fColExpr').value = t.column_expr;
+    document.getElementById('fDesc').value    = t.description || '';
+    document.getElementById('fUseInSql').checked = true;
+    clearSynEditor();
+    (t.synonyms || []).forEach(addSynChip);
+    document.getElementById('termModalError').hidden = true;
+    openModal(termModal);
+  }
+
+  document.getElementById('addTermBtn').addEventListener('click', openAddModal);
+
+  document.getElementById('termModalSave').addEventListener('click', async () => {
+    const mode  = document.getElementById('termModalMode').value;
+    const errEl = document.getElementById('termModalError');
+    const payload = {
+      term:        document.getElementById('fTerm').value.trim(),
+      kind:        document.getElementById('fKind').value,
+      column_expr: document.getElementById('fColExpr').value.trim(),
+      synonyms:    getSynonymsFromEditor(),
+    };
+    if (!payload.term || !payload.column_expr) {
+      errEl.textContent = 'Заполните обязательные поля: Термин и SQL-выражение.';
+      errEl.hidden = false; return;
+    }
+    try {
+      if (mode.startsWith('edit:')) {
+        const old = mode.slice(5);
+        await fetch(`/semantic-layer/${encodeURIComponent(old)}`, { method: 'DELETE' });
+      }
+      const r = await fetch('/semantic-layer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) { const j = await r.json(); throw new Error(j.detail || 'Ошибка сервера'); }
+      closeModal(termModal);
+      await loadDict();
+    } catch(e) {
+      errEl.textContent = e.message;
+      errEl.hidden = false;
+    }
+  });
+
+  // ---- DELETE MODAL ----
+  const deleteModal = document.getElementById('deleteModal');
+
+  function openDeleteModal(termName) {
+    deleteTargetTerm = termName;
+    document.getElementById('deleteTermName').textContent = termName;
+    openModal(deleteModal);
+  }
+
+  document.getElementById('deleteModalConfirm').addEventListener('click', async () => {
+    try {
+      await fetch(`/semantic-layer/${encodeURIComponent(deleteTargetTerm)}`, { method: 'DELETE' });
+      closeModal(deleteModal);
+      await loadDict();
+    } catch {}
+  });
+
+  // ---- SETTINGS MODAL ----
+  const settingsModal = document.getElementById('settingsModal');
+  document.getElementById('settingsBtn').addEventListener('click', () => openModal(settingsModal));
+
+  // channel picker
+  document.querySelectorAll('.channel-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.channel-opt').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      const ch = btn.dataset.channel;
+      document.querySelectorAll('.channel-field').forEach(f => {
+        f.classList.toggle('is-active',
+          ch === 'both' || f.dataset.channelField === ch);
+      });
+    });
+  });
+</script>
+
+<!-- ============ MODAL: SETTINGS ============ -->
+<div class="modal" id="settingsModal" hidden>
+  <div class="modal__backdrop" data-close></div>
+  <div class="modal__dialog modal__dialog--wide">
+    <div class="modal__head">
+      <div>
+        <div class="modal__eyebrow">Профиль и настройки</div>
+        <h3 class="modal__title">Настройки аккаунта</h3>
+      </div>
+      <button class="icon-btn modal__close" data-close title="Закрыть">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal__body">
+
+      <!-- Profile -->
+      <div class="settings-sec">
+        <div class="settings-sec__title">Профиль</div>
+        <div class="settings-sec__body">
+          <div class="field-row">
+            <div class="field">
+              <label>Имя</label>
+              <input type="text" id="profName" value="Иван Иванов">
+            </div>
+            <div class="field">
+              <label>Должность</label>
+              <input type="text" value="Менеджер · Аналитика">
+            </div>
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="text" value="ivan@company.ru">
+          </div>
+        </div>
+      </div>
+
+      <!-- Куда отправлять отчёты -->
+      <div class="settings-sec">
+        <div class="settings-sec__title">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Куда отправлять отчёты
+        </div>
+        <div class="settings-sec__body">
+
+          <div class="channel-picker" id="channelPicker" role="tablist">
+            <button class="channel-opt" data-channel="telegram" type="button">
+              <span class="channel-opt__ico">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              </span>
+              <div class="channel-opt__text">
+                <b>Telegram</b>
+                <small>Бот напишет в личку</small>
+              </div>
+              <span class="channel-opt__check">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+            </button>
+            <button class="channel-opt" data-channel="email" type="button">
+              <span class="channel-opt__ico">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </span>
+              <div class="channel-opt__text">
+                <b>Email</b>
+                <small>Письмо с вложением</small>
+              </div>
+              <span class="channel-opt__check">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+            </button>
+            <button class="channel-opt is-active" data-channel="both" type="button">
+              <span class="channel-opt__ico">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/><polyline points="20 12 9 23"/></svg>
+              </span>
+              <div class="channel-opt__text">
+                <b>Оба канала</b>
+                <small>И в Telegram, и на email</small>
+              </div>
+              <span class="channel-opt__check">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+            </button>
+          </div>
+
+          <div class="channel-fields">
+            <div class="channel-field is-active" data-channel-field="telegram">
+              <div class="field">
+                <label>Telegram ID</label>
+                <div class="input-with-action">
+                  <input type="text" id="tgIdInput" value="123456789" placeholder="например: 987654321" inputmode="numeric">
+                  <button class="btn btn--ghost btn--sm" type="button">Тест</button>
+                </div>
+                <div class="field__hint">
+                  Отчёты придут в личку от бота <b>@InstantData_bot</b>.
+                  Не знаете свой ID? Напишите боту <b>@userinfobot</b> — он пришлёт число.
+                </div>
+              </div>
+              <div class="tg-status tg-status--ok">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Бот привязан · последняя рассылка 21 апр. 2026
+              </div>
+            </div>
+
+            <div class="channel-field is-active" data-channel-field="email">
+              <div class="field">
+                <label>Email для отчётов</label>
+                <div class="input-with-action">
+                  <input type="text" id="emailInput" value="ivan@company.ru" placeholder="name@company.ru">
+                  <button class="btn btn--ghost btn--sm" type="button">Тест</button>
+                </div>
+                <div class="field__hint">
+                  Письмо придёт с адреса <b>reports@instantdata.ru</b>. PDF-отчёт будет во вложении.
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="settings-sec">
+        <div class="settings-sec__title">Уведомления</div>
+        <div class="settings-sec__body">
+          <label class="toggle toggle--row">
+            <input type="checkbox" checked>
+            <span class="toggle__track"><span class="toggle__thumb"></span></span>
+            <div class="toggle__text">
+              <b>Отчёты по расписанию</b>
+              <small>Автоматическая рассылка выбранным выше способом.</small>
+            </div>
+          </label>
+          <label class="toggle toggle--row">
+            <input type="checkbox" checked>
+            <span class="toggle__track"><span class="toggle__thumb"></span></span>
+            <div class="toggle__text">
+              <b>Алерты при отклонении метрик</b>
+              <small>ИИ сообщит, если данные сильно отклонились от нормы.</small>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Interface -->
+      <div class="settings-sec">
+        <div class="settings-sec__title">Интерфейс</div>
+        <div class="settings-sec__body">
+          <div class="field-row">
+            <div class="field">
+              <label>Язык</label>
+              <select>
+                <option selected>Русский</option>
+                <option>English</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Тема</label>
+              <select>
+                <option selected>Светлая</option>
+                <option>Тёмная</option>
+                <option>Системная</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal__foot">
+      <button class="btn btn--ghost" data-close>Отмена</button>
+      <button class="btn btn--primary" id="saveSettings">Сохранить настройки</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+httpx
+sqlparse
+sqlglot
+sqlalchemy
+pymysql
+pandas
+plotly
+tqdm
+requests
+streamlit
