@@ -1,4 +1,4 @@
-"""Конфиги БД и таймаутов."""
+"""Конфиги БД и таймаутов. Read-only роль для всех NL-запросов."""
 from sqlalchemy import create_engine
 
 DB_HOST = "localhost"
@@ -14,6 +14,8 @@ ADMIN_PASSWORD = ""
 QUERY_TIMEOUT_SEC = 10
 FORCED_LIMIT = 1000
 
+# LM Studio exposes OpenAI-compatible API on localhost:1234 by default.
+# Модель: defog_-_llama-3-sqlcoder-8b.
 LLM_BASE_URL = "http://localhost:1234/v1"
 LLM_MODEL = "qwen/qwen3-coder-30b"
 LLM_TIMEOUT_SEC = 120
@@ -32,6 +34,7 @@ engine_ro = create_engine(
     connect_args={
         "connect_timeout": 5,
         "read_timeout": QUERY_TIMEOUT_SEC,
+        # MariaDB: max_statement_time в секундах (FLOAT). В MySQL было бы MAX_EXECUTION_TIME в мс.
         "init_command": f"SET SESSION max_statement_time={QUERY_TIMEOUT_SEC}",
     },
 )

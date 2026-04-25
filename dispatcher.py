@@ -1,4 +1,4 @@
-"""Гибридный диспетчер NL → SQL."""
+"""NL→SQL: rule-router → guardrails → exec; при необходимости LLM fallback."""
 from __future__ import annotations
 
 import re
@@ -64,6 +64,7 @@ _AGG_LABELS = {"COUNT": "COUNT(*)", "SUM": "SUM", "AVG": "AVG", "MIN": "MIN", "M
 
 
 def _understanding_from_sql(sql: str) -> dict:
+    """Поля explain из AST SQL (агрегация, разрез, фильтр, LIMIT)."""
     u: dict = {}
     try:
         tree = sqlglot.parse_one(sql, read="mysql")
@@ -71,6 +72,7 @@ def _understanding_from_sql(sql: str) -> dict:
         return u
     if tree is None:
         return u
+
     aggs = []
     for node in tree.find_all(exp.AggFunc):
         name = type(node).__name__.upper()
@@ -80,6 +82,7 @@ def _understanding_from_sql(sql: str) -> dict:
             aggs.append(name)
     if aggs:
         u["агрегация"] = ", ".join(dict.fromkeys(aggs))
+
     groups = []
     for g in tree.find_all(exp.Group):
         for col in g.expressions:
@@ -89,6 +92,7 @@ def _understanding_from_sql(sql: str) -> dict:
                 pass
     if groups:
         u["разрез"] = ", ".join(groups)
+
     where = tree.find(exp.Where)
     if where is not None:
         try:
@@ -96,12 +100,14 @@ def _understanding_from_sql(sql: str) -> dict:
             u["фильтр"] = raw if len(raw) < 200 else raw[:197] + "…"
         except Exception:
             pass
+
     lim = tree.find(exp.Limit)
     if lim is not None and lim.expression is not None:
         try:
             u["top_n"] = int(lim.expression.sql(dialect="mysql"))
         except Exception:
             pass
+
     sel_cols = []
     select = tree.find(exp.Select)
     if select is not None:
@@ -113,6 +119,44 @@ def _understanding_from_sql(sql: str) -> dict:
     if sel_cols and "метрика" not in u:
         u["метрика"] = ", ".join(sel_cols[:4])
     return u
+
+
+def _resolved_term_from_sql(sql: str) -> Optional[str]:
+    """Бизнес-термин по агрегату в SELECT или dimension в тексте SQL."""
+    sql_text = sql or ""
+    try:
+        tree = sqlglot.parse_one(sql_text, read="mysql")
+    except Exception:
+        tree = None
+
+    select_aggs: list[str] = []
+    if tree is not None:
+        sel = tree.find(exp.Select)
+        if sel is not None:
+            for e in sel.expressions:
+                if isinstance(e, exp.Alias):
+                    node = e.this
+                else:
+                    node = e
+                if isinstance(node, exp.AggFunc):
+                    try:
+                        select_aggs.append(node.sql(dialect="mysql").lower().replace(" ", ""))
+                    except Exception:
+                        pass
+
+    metrics = semantic.list_all(kind="metric")
+    for t in metrics:
+        agg = (t.get("agg") or "").lower().replace(" ", "")
+        if agg and agg in select_aggs:
+            return t["term"]
+
+    low = sql_text.lower()
+    dims = semantic.list_all(kind="dimension")
+    for t in dims:
+        col = (t.get("column_expr") or "").lower()
+        if col and col in low:
+            return t["term"]
+    return None
 
 
 def _run_sql(sql: str) -> ExecResult:
@@ -131,6 +175,7 @@ def _try_llm(query: str, res: DispatchResult) -> Optional[str]:
         res.status = "llm_unavailable"
         return None
     res.llm_latency_ms = llm.latency_ms
+
     if llm.explanation or llm.logic_path:
         llm_understanding = {}
         if llm.explanation:
@@ -141,14 +186,19 @@ def _try_llm(query: str, res: DispatchResult) -> Optional[str]:
             llm_understanding["stats_template"] = llm.stats_template
             res.stats_template = llm.stats_template
         res.understanding.update(llm_understanding)
-    
+
     return llm.sql
 
 
 def answer(query: str) -> DispatchResult:
     res = DispatchResult(query=query)
+
     rr: RouterResult = router.build(query)
     res.understanding = rr.plan.understanding
+    if rr.plan.metric:
+        res.understanding["resolved_term"] = rr.plan.metric.term
+    elif rr.plan.dimensions:
+        res.understanding["resolved_term"] = rr.plan.dimensions[0].term
 
     use_rule = (
         rr.sql is not None
@@ -158,6 +208,7 @@ def answer(query: str) -> DispatchResult:
     sql: Optional[str] = rr.sql if use_rule else None
     res.route = "rule" if use_rule else "llm"
     res.confidence = rr.confidence
+
     if sql is None:
         if not rr.plan.metric and not rr.plan.dimensions:
             res.status = "not_recognized"
@@ -171,6 +222,7 @@ def answer(query: str) -> DispatchResult:
                 return res
             sql = rr.sql
             res.route = "rule (LLM unavailable)"
+
     try:
         report: GuardrailReport = validate(sql)
     except GuardrailError as e:
@@ -186,6 +238,7 @@ def answer(query: str) -> DispatchResult:
         "had_limit": report.had_limit, "has_aggregate": report.has_aggregate,
     }
     res.warnings.extend(performance_warnings(report.sql))
+
     try:
         exec_res = _run_sql(report.sql)
     except Exception as e:
@@ -204,7 +257,7 @@ def answer(query: str) -> DispatchResult:
                     }
                     res.route = "rule+llm"
                     res.warnings.extend(performance_warnings(report2.sql))
-                except (GuardrailError, Exception) as e2:
+                except (GuardrailError, Exception) as e2:  # noqa: BLE001
                     res.status = "error"
                     res.exec_error = f"{type(e).__name__}: {e}; LLM тоже не удалась: {e2}"
                     return res
@@ -223,12 +276,19 @@ def answer(query: str) -> DispatchResult:
 
     if res.route.startswith("llm") or res.route.startswith("rule+llm"):
         llm_u = _understanding_from_sql(res.sql or "")
+        old_resolved = res.understanding.get("resolved_term")
+        resolved_from_sql = _resolved_term_from_sql(res.sql or "")
         if llm_u:
             res.understanding = llm_u
+        if resolved_from_sql:
+            res.understanding["resolved_term"] = resolved_from_sql
+        elif old_resolved:
+            res.understanding["resolved_term"] = old_resolved
     return res
 
 
 def recommend_chart(columns: list[str], rows: int) -> str:
+    """Тип графика по числу колонок и признакам времени в первой колонке."""
     if rows == 0:
         return "empty"
     if len(columns) == 1:

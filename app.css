@@ -1486,6 +1486,69 @@ input, textarea { font-family: inherit; }
 }
 .canvas-empty h3 { font-size: 20px; color: #2a2f36; margin-bottom: 6px; font-weight: 600; }
 
+/* Empty state from 11/new chat */
+.bi-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #ffffff;
+  border: 1.5px dashed #dbe1e4;
+  border-radius: 18px;
+  padding: 56px 28px;
+  min-height: 70vh;
+  gap: 14px;
+}
+.bi-empty__icon {
+  width: 84px; height: 84px;
+  border-radius: 24px;
+  background: rgba(150,234,40,0.15);
+  color: #146414;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+.bi-empty h2 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #1e1e1e;
+  margin: 0;
+}
+.bi-empty p {
+  font-size: 14.5px;
+  color: #373c46;
+  max-width: 520px;
+  line-height: 1.55;
+  margin: 0;
+}
+.bi-empty__flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 10px;
+}
+.flow-pill {
+  padding: 7px 14px;
+  background: #fafafa;
+  border: 1px solid #dbe1e4;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #373c46;
+  font-weight: 600;
+}
+.flow-pill--accent {
+  background: #96ea28;
+  border-color: #96ea28;
+  color: #1e1e1e;
+}
+.flow-arrow { color: #96ea28; font-weight: 700; }
+
 /* ---------- assistant bubble inside panel ---------- */
 .msg__bubble--assistant {
   background: #f0f7ff; border: 1px solid #d5e4f5; color: #1f2937;
@@ -1760,6 +1823,13 @@ input, textarea { font-family: inherit; }
   letter-spacing: -0.02em;
   color: #1e1e1e;
 }
+#reportModalTitle[contenteditable="false"] {
+  cursor: default;
+}
+#reportModalTitle[contenteditable="true"] {
+  cursor: text;
+  outline: none;
+}
 .modal__close {
   background: #fafafa;
   border: 1px solid #dbe1e4;
@@ -1838,6 +1908,29 @@ input, textarea { font-family: inherit; }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
+}
+
+/* Модалка отчёта: частота + день/число в одной строке (без второго блока частота на всю ширину) */
+.field-row.field-row--report-sched-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px;
+}
+.field-row--report-sched-top .report-sched-freq {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.field-row--report-sched-top .report-sched-extra {
+  flex: 0 1 200px;
+  min-width: 160px;
+}
+
+/* Атрибут hidden: flex у .field не должен оставлять блок видимым */
+.field[hidden],
+.field-row[hidden],
+.next-run[hidden] {
+  display: none !important;
 }
 
 /* Synonym editor */
@@ -2069,4 +2162,148 @@ input, textarea { font-family: inherit; }
   background: rgba(150,234,40,0.18);
   color: #146414;
   border: 1px solid rgba(150,234,40,0.5);
+}
+
+/* ============================================================
+   Modals: new-report wizard, report edit, settings (добавлено)
+============================================================ */
+
+.field-row-toggle {
+  padding: 14px 16px;
+  background: #fafafa;
+  border: 1px solid #dbe1e4;
+  border-radius: 12px;
+}
+.sched-settings {
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 16px;
+  background: rgba(150,234,40,0.08);
+  border: 1px dashed #96ea28;
+  border-radius: 12px;
+}
+.next-run {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  background: #ffffff; border: 1px solid #dbe1e4; border-radius: 10px;
+  font-size: 13px; color: #146414;
+  font-family: 'JetBrains Mono', monospace; font-weight: 600;
+}
+.modal__divider { height: 1px; background: #dbe1e4; margin: 4px 0; }
+.menu-actions { display: flex; flex-direction: column; gap: 2px; }
+.menu-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 10px;
+  text-align: left; font-size: 13.5px; color: #373c46;
+  background: transparent; width: 100%; font-weight: 500;
+  transition: background .15s ease, color .15s ease;
+}
+.menu-item:hover { background: #fafafa; color: #1e1e1e; }
+.menu-item svg { color: #373c46; flex-shrink: 0; }
+.menu-item:hover svg { color: #146414; }
+.menu-item--danger { color: #b42828; }
+.menu-item--danger:hover { background: #fde8e8; color: #b42828; }
+.menu-item--danger svg { color: #b42828; }
+
+/* ---------- toasts ---------- */
+.toast-host {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 220;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  min-width: 240px;
+  max-width: 360px;
+  background: #1e1e1e;
+  color: #fafafa;
+  border: 1px solid #373c46;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  box-shadow: 0 16px 36px -16px rgba(30,30,30,0.45);
+  transform: translateY(8px);
+  opacity: 0;
+  transition: transform .18s ease, opacity .18s ease;
+}
+.toast.is-show {
+  transform: translateY(0);
+  opacity: 1;
+}
+.toast--success {
+  border-color: rgba(150,234,40,0.65);
+}
+.toast--error {
+  border-color: rgba(204,0,0,0.7);
+}
+
+/* Wizard steps */
+.steps-strip { display: flex; align-items: center; padding: 4px 0 18px; margin-bottom: 4px; }
+.step-dot { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #373c46; }
+.step-dot span {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #dbe1e4; color: #373c46;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+}
+.step-dot.is-active { color: #146414; }
+.step-dot.is-active span { background: #96ea28; color: #1e1e1e; }
+.step-line { flex: 1; height: 2px; background: #dbe1e4; margin: 0 12px; border-radius: 2px; }
+.wizard-sec {
+  display: grid; grid-template-columns: 40px 1fr; gap: 16px;
+  padding: 18px 0; border-top: 1px dashed #dbe1e4;
+}
+.wizard-sec:first-of-type { border-top: none; padding-top: 4px; }
+.wizard-sec__num {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: rgba(150,234,40,0.2); color: #146414;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800;
+}
+.wizard-sec__body { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+.viz-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.viz-opt input { display: none; }
+.viz-opt__inner {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 14px 10px;
+  background: #ffffff; border: 1.5px solid #dbe1e4; border-radius: 12px;
+  font-size: 13px; color: #373c46; font-weight: 600; cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+.viz-opt__inner svg { color: #373c46; }
+.viz-opt__inner:hover { border-color: #96ea28; background: #f6fde5; color: #1e1e1e; }
+.viz-opt input:checked ~ .viz-opt__inner {
+  border-color: #96ea28; background: rgba(150,234,40,0.15); color: #146414;
+}
+.viz-opt input:checked ~ .viz-opt__inner svg { color: #146414; }
+
+/* Recipient pills */
+.recipient-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; background: #fafafa;
+  border: 1.5px solid #dbe1e4; border-radius: 12px;
+}
+.recipient-card__chans { flex: 1; display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.chan-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px 6px 8px;
+  background: #ffffff; border: 1px solid #dbe1e4; border-radius: 999px;
+  max-width: 100%;
+}
+.chan-pill__ico {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.chan-pill--tg .chan-pill__ico { background: rgba(150,234,40,0.2); color: #146414; }
+.chan-pill--mail .chan-pill__ico { background: #dbe1e4; color: #373c46; }
+.chan-pill__body { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.chan-pill__body b { font-size: 12px; font-weight: 700; color: #1e1e1e; }
+.chan-pill__body small {
+  font-size: 11px; color: #373c46;
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;
 }

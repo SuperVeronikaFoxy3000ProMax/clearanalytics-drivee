@@ -1,4 +1,8 @@
-"""Логирование NL-запросов: JSONL + человекочитаемый лог."""
+"""Логирование NL-запросов: JSONL + человекочитаемый лог.
+
+JSONL-файл — для дашборда аналитика / будущего UI «история».
+Текстовый лог — для быстрого просмотра `tail -f`.
+"""
 from __future__ import annotations
 
 import json
@@ -28,11 +32,11 @@ if not _text_logger.handlers:
 class QueryLogEntry:
     ts: str = field(default_factory=lambda: datetime.now().isoformat(timespec="seconds"))
     query: str = ""
-    route_type: str = "unknown"
+    route_type: str = "unknown"     # rule | llm | template | unknown
     sql: Optional[str] = None
     exec_ms: Optional[int] = None
     rows: Optional[int] = None
-    status: str = "ok"
+    status: str = "ok"              # ok | error | blocked | ambiguous | not_recognized
     confidence: Optional[float] = None
     error: Optional[str] = None
     extras: dict = field(default_factory=dict)
@@ -53,6 +57,14 @@ def write(entry: QueryLogEntry) -> None:
 
 @contextmanager
 def log_query(query: str, route_type: str = "unknown"):
+    """Context-manager: заполняет exec_ms автоматически, ловит исключения.
+
+    Использование:
+        with log_query("покажи выручку", route_type="rule") as entry:
+            entry.sql = sql
+            entry.rows = len(rows)
+            entry.confidence = 0.9
+    """
     entry = QueryLogEntry(query=query, route_type=route_type)
     t0 = time.monotonic()
     try:
@@ -67,6 +79,7 @@ def log_query(query: str, route_type: str = "unknown"):
 
 
 def tail(n: int = 50) -> list[dict]:
+    """Последние N записей — для /logs эндпоинта."""
     if not JSONL_PATH.exists():
         return []
     with JSONL_PATH.open(encoding="utf-8") as f:

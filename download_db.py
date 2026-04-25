@@ -2,13 +2,16 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
 
+# создаём базу данных если её нет
 engine_root = create_engine("mysql+pymysql://root:@localhost:3306")
 with engine_root.connect() as conn:
     conn.execute(text("CREATE DATABASE IF NOT EXISTS drivee"))
     conn.commit()
 
+# подключение к MySQL
 engine = create_engine("mysql+pymysql://root:@localhost:3306/drivee")
 
+# создаём таблицу если её нет
 with engine.connect() as conn:
     conn.execute(text("""
         CREATE TABLE IF NOT EXISTS orders (
@@ -39,8 +42,10 @@ with engine.connect() as conn:
     """))
     conn.commit()
 
+# читаем CSV
 df = pd.read_csv("train.csv")
 
+# преобразуем даты
 date_columns = [
     "order_timestamp",
     "tender_timestamp",
@@ -57,6 +62,7 @@ date_columns = [
 for col in date_columns:
     df[col] = pd.to_datetime(df[col], errors="coerce")
 
+# загрузка батчами (очень важно для больших данных)
 chunk_size = 10000
 
 for i in tqdm(range(0, len(df), chunk_size)):
@@ -70,6 +76,7 @@ for i in tqdm(range(0, len(df), chunk_size)):
 
 print("Загрузка завершена")
 
+# создаём индексы для ускорения запросов
 print("Создаём индексы...")
 with engine.connect() as conn:
     conn.execute(text("CREATE INDEX IF NOT EXISTS idx_city ON orders(city_id)"))

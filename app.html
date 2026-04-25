@@ -54,9 +54,9 @@
     </div>
 
     <div class="sidebar__user">
-      <div class="avatar">ИИ</div>
+      <div class="avatar" id="sidebarAvatar" aria-hidden="true">ПП</div>
       <div class="sidebar__userinfo">
-        <span class="sidebar__name">Иван Иванов</span>
+        <span class="sidebar__name" id="sidebarUserName">Пользователь</span>
       </div>
       <button class="icon-btn" id="settingsBtn" title="Настройки">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -92,8 +92,16 @@
         <!-- CENTER: BI CANVAS (только графики) -->
         <div class="workspace__main" id="canvas">
           <div id="canvasEmpty" class="canvas-empty">
-            <h3>Начните с вопроса →</h3>
-            <p>График появится здесь, объяснение — в панели справа.</p>
+            <div class="bi-empty">
+              <div class="bi-empty__icon">
+                <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+              </div>
+              <h2>Здесь появится ваш график</h2>
+              <p>Задайте вопрос на русском в чате справа — InstantData сгенерирует SQL, выполнит запрос к базе данных и покажет результат в виде графика и таблицы.</p>
+              <div class="bi-empty__flow">
+                <span class="flow-pill">1 · Вопрос</span><span class="flow-arrow">→</span><span class="flow-pill">2 · SQL</span><span class="flow-arrow">→</span><span class="flow-pill">3 · График</span><span class="flow-arrow">→</span><span class="flow-pill flow-pill--accent">4 · Решение</span>
+              </div>
+            </div>
           </div>
           <div id="canvasBody"></div>
         </div>
@@ -116,7 +124,7 @@
               <div class="chat-inner">
 
                 <div class="welcome" id="welcome">
-                  <h3>Здравствуйте, Иван 👋</h3>
+                  <h3>Здравствуйте, <span id="welcomeName">друг</span> 👋</h3>
                   <p>С чего начнём? Выберите шаблон или задайте свой вопрос.</p>
                   <div class="suggest">
                     <button class="suggest__item"><span class="suggest__icon">📊</span><span>Покажи отмены по городам за прошлую неделю</span></button>
@@ -293,6 +301,185 @@
       </div>
     </div>
 
+    <!-- ============ MODAL: SETTINGS (до <script>, чтобы querySelector и getElementById видели узел) ============ -->
+    <div class="modal" id="settingsModal" hidden>
+      <div class="modal__backdrop" data-close></div>
+      <div class="modal__dialog modal__dialog--wide">
+        <div class="modal__head">
+          <div>
+            <div class="modal__eyebrow">Профиль и настройки</div>
+            <h3 class="modal__title">Настройки аккаунта</h3>
+          </div>
+          <button class="icon-btn modal__close" data-close title="Закрыть">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="modal__body">
+
+          <!-- Profile -->
+          <div class="settings-sec">
+            <div class="settings-sec__title">Профиль</div>
+            <div class="settings-sec__body">
+              <div class="field-row">
+                <div class="field">
+                  <label>Имя</label>
+                  <input type="text" id="profName" value="" placeholder="Как к вам обращаться" autocomplete="name">
+                </div>
+                <div class="field">
+                  <label>Должность</label>
+                  <input type="text" value="Менеджер · Аналитика">
+                </div>
+              </div>
+              <div class="field">
+                <label>Email</label>
+                <input type="text" value="ivan@company.ru">
+              </div>
+            </div>
+          </div>
+
+          <!-- Куда отправлять отчёты -->
+          <div class="settings-sec">
+            <div class="settings-sec__title">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Куда отправлять отчёты
+            </div>
+            <div class="settings-sec__body">
+
+              <div class="channel-picker" id="channelPicker" role="tablist">
+                <button class="channel-opt" data-channel="telegram" type="button">
+                  <span class="channel-opt__ico">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                  </span>
+                  <div class="channel-opt__text">
+                    <b>Telegram</b>
+                    <small>Бот напишет в личку</small>
+                  </div>
+                  <span class="channel-opt__check">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </button>
+                <button class="channel-opt" data-channel="email" type="button">
+                  <span class="channel-opt__ico">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  </span>
+                  <div class="channel-opt__text">
+                    <b>Email</b>
+                    <small>Письмо с вложением</small>
+                  </div>
+                  <span class="channel-opt__check">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </button>
+                <button class="channel-opt is-active" data-channel="both" type="button">
+                  <span class="channel-opt__ico">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/><polyline points="20 12 9 23"/></svg>
+                  </span>
+                  <div class="channel-opt__text">
+                    <b>Оба канала</b>
+                    <small>И в Telegram, и на email</small>
+                  </div>
+                  <span class="channel-opt__check">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </button>
+              </div>
+
+              <div class="channel-fields">
+                <div class="channel-field is-active" data-channel-field="telegram">
+                  <div class="field">
+                    <label>Telegram ID</label>
+                    <div class="input-with-action">
+                  <input type="text" id="tgIdInput" value="" placeholder="обязательно: число из /start или /id" inputmode="numeric">
+                  <button class="btn btn--ghost btn--sm" type="button" id="tgTestBtn">Тест</button>
+                    </div>
+                    <div class="field__hint">
+                      Сначала в Telegram отправьте боту <b>/start</b>, затем скопируйте сюда ваш
+                      <b>Telegram ID</b> (число из ответа бота или команда /id). Без этого тест и рассылка не сработают.
+                    </div>
+                  </div>
+                  <div class="tg-status tg-status--ok" id="tgStatusHint">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span id="tgStatusText">Введите ID — здесь появятся связь с ботом и дата последней рассылки</span>
+                  </div>
+                </div>
+
+                <div class="channel-field is-active" data-channel-field="email">
+                  <div class="field">
+                    <label>Email для отчётов</label>
+                    <div class="input-with-action">
+                      <input type="text" id="emailInput" value="" placeholder="name@company.ru">
+                      <button class="btn btn--ghost btn--sm" type="button">Тест</button>
+                    </div>
+                    <div class="field__hint">
+                      Письмо придёт с адреса <b>reports@instantdata.ru</b>. PDF-отчёт будет во вложении.
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="field__hint" style="margin-top:10px">
+                Время отправки отчётов по расписанию указывается по <b>московскому времени (МСК)</b>.
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <div class="settings-sec">
+            <div class="settings-sec__title">Уведомления</div>
+            <div class="settings-sec__body">
+              <label class="toggle toggle--row">
+                <input type="checkbox" checked>
+                <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                <div class="toggle__text">
+                  <b>Отчёты по расписанию</b>
+                  <small>Автоматическая рассылка выбранным выше способом.</small>
+                </div>
+              </label>
+              <label class="toggle toggle--row">
+                <input type="checkbox" checked>
+                <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                <div class="toggle__text">
+                  <b>Алерты при отклонении метрик</b>
+                  <small>ИИ сообщит, если данные сильно отклонились от нормы.</small>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Interface -->
+          <div class="settings-sec">
+            <div class="settings-sec__title">Интерфейс</div>
+            <div class="settings-sec__body">
+              <div class="field-row">
+                <div class="field">
+                  <label>Язык</label>
+                  <select>
+                    <option selected>Русский</option>
+                    <option>English</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Тема</label>
+                  <select>
+                    <option selected>Светлая</option>
+                    <option>Тёмная</option>
+                    <option>Системная</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal__foot">
+          <button class="btn btn--ghost" data-close>Отмена</button>
+          <button class="btn btn--primary" id="saveSettings">Сохранить настройки</button>
+        </div>
+      </div>
+    </div>
+
     <!-- =============== CHARTS VIEW =============== -->
     <section class="view view--charts" data-view="charts">
       <div class="view__scroll">
@@ -308,7 +495,7 @@
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input placeholder="Поиск по отчётам…"/>
               </div>
-              <button class="btn btn--primary btn--sm">＋ Новый отчёт</button>
+              <button class="btn btn--primary btn--sm" id="newReportBtn">＋ Новый отчёт</button>
             </div>
           </div>
 
@@ -319,13 +506,13 @@
             <button class="chip">Общие</button>
           </div>
 
-          <div class="reports">
+          <div class="reports" id="reportsList">
 
             <!-- Report card 1 -->
             <article class="report">
               <div class="report__head">
                 <span class="report__type">Столбчатый</span>
-                <button class="icon-btn" title="Меню">⋯</button>
+                <button class="icon-btn report__menu-btn" title="Меню">⋯</button>
               </div>
               <div class="report__preview">
                 <div class="mini-bars">
@@ -348,7 +535,7 @@
             <article class="report">
               <div class="report__head">
                 <span class="report__type">Линейный</span>
-                <button class="icon-btn">⋯</button>
+                <button class="icon-btn report__menu-btn">⋯</button>
               </div>
               <div class="report__preview">
                 <svg viewBox="0 0 200 80" class="mini-line" preserveAspectRatio="none">
@@ -374,7 +561,7 @@
             <article class="report">
               <div class="report__head">
                 <span class="report__type">Круговой</span>
-                <button class="icon-btn">⋯</button>
+                <button class="icon-btn report__menu-btn">⋯</button>
               </div>
               <div class="report__preview">
                 <div class="mini-pie">
@@ -397,7 +584,7 @@
             <article class="report">
               <div class="report__head">
                 <span class="report__type">Area</span>
-                <button class="icon-btn">⋯</button>
+                <button class="icon-btn report__menu-btn">⋯</button>
               </div>
               <div class="report__preview">
                 <svg viewBox="0 0 200 80" class="mini-line" preserveAspectRatio="none">
@@ -420,7 +607,7 @@
             <article class="report">
               <div class="report__head">
                 <span class="report__type">Таблица</span>
-                <button class="icon-btn">⋯</button>
+                <button class="icon-btn report__menu-btn">⋯</button>
               </div>
               <div class="report__preview report__preview--table">
                 <div class="mini-table">
@@ -443,7 +630,7 @@
             <article class="report">
               <div class="report__head">
                 <span class="report__type">Столбчатый</span>
-                <button class="icon-btn">⋯</button>
+                <button class="icon-btn report__menu-btn">⋯</button>
               </div>
               <div class="report__preview">
                 <div class="mini-bars">
@@ -472,7 +659,6 @@
 </div>
 
 <script>
-  // ---------- view switching ----------
   const navItems = document.querySelectorAll('.sidenav__item');
   const views    = document.querySelectorAll('.view');
   const titleEl  = document.getElementById('viewTitle');
@@ -493,10 +679,22 @@
     });
   });
 
-  // ---------- helpers ----------
   const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => (
     { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
   ));
+  function notify(message, type = 'success') {
+    const host = document.getElementById('toastHost');
+    if (!host) return;
+    const toast = document.createElement('div');
+    toast.className = `toast toast--${type}`;
+    toast.textContent = message;
+    host.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('is-show'));
+    setTimeout(() => {
+      toast.classList.remove('is-show');
+      setTimeout(() => toast.remove(), 180);
+    }, 2600);
+  }
   const SQL_KW = /\b(SELECT|FROM|WHERE|AND|OR|NOT|NULL|AS|GROUP BY|ORDER BY|LIMIT|COUNT|SUM|AVG|MIN|MAX|DISTINCT|JOIN|ON|LEFT|RIGHT|INNER|BETWEEN|IN|IS|CASE|WHEN|THEN|ELSE|END|INTERVAL|CURRENT_DATE|MONTH|YEAR|DAY)\b/gi;
   const hlSql = sql => escapeHtml(sql).replace(SQL_KW, '<span class="kw">$1</span>')
                                       .replace(/'([^']*)'/g, `<span class="str">'$1'</span>`);
@@ -513,8 +711,7 @@
       return `<div class="interp"><div class="interp__row"><span class="interp__val">—</span></div></div>`;
     }
     const rows = [];
-    
-    // Если есть stats_template от LLM — показываем описания для KPI
+
     if (u['stats_template']) {
       const st = u['stats_template'];
       if (st['description_sum']) {
@@ -527,21 +724,13 @@
         rows.push(`<div class="interp__row"><span class="interp__key">Максимум</span><span class="interp__val">${escapeHtml(st['description_max'])}</span></div>`);
       }
     }
-    
-    // Показываем logic_path если есть
+
     if (u['logic_path']) {
       rows.push(`<div class="interp__row"><span class="interp__key">Дорожка логики</span><span class="interp__val"><code>${escapeHtml(u['logic_path'])}</code></span></div>`);
     }
-    
-    // Показываем explanation если есть (но не дублируем в bubble)
-    // if (u['explanation']) {
-    //   rows.push(`<div class="interp__row"><span class="interp__key">Объяснение</span><span class="interp__val">${escapeHtml(u['explanation'])}</span></div>`);
-    // }
-    
-    // Остальные поля understanding
+
     for (const [k, v] of Object.entries(u)) {
-      // Пропускаем уже обработанные поля
-      if (['stats_template', 'logic_path', 'explanation'].includes(k)) continue;
+      if (['stats_template', 'logic_path', 'explanation', 'resolved_term'].includes(k)) continue;
       if (v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length)) continue;
       const label = UNDERSTANDING_LABELS[k] || k;
       const val = Array.isArray(v) ? v.join(', ') : String(v);
@@ -551,7 +740,6 @@
     return `<div class="interp">${rows.join('') || '<div class="interp__row"><span class="interp__val">—</span></div>'}</div>`;
   }
 
-  // иконки route: 📝 rule, 🤖 llm, 🤖+📝 rule+llm
   const ICON_RULE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13l-4 4-2-2"/></svg>';
   const ICON_LLM  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="8.5" cy="13.5" r="1.2"/><circle cx="15.5" cy="13.5" r="1.2"/><path d="M12 3v4"/><circle cx="12" cy="3" r="1"/></svg>';
   function renderRouteBadge(route) {
@@ -563,7 +751,6 @@
     return '';
   }
 
-  // ---------- rendering: canvas (BI) + thread (full chat) ----------
   const canvasBody  = document.getElementById('canvasBody');
   const canvasEmpty = document.getElementById('canvasEmpty');
   const welcomeEl   = document.getElementById('welcome');
@@ -602,29 +789,23 @@
     if (box) box.scrollTop = box.scrollHeight;
   }
 
-  // короткое человеческое описание логики под запрос
   function explainHuman(data) {
     const u = data.understanding || {};
     const route = data.route || 'unknown';
-    
-    // Если LLM генерировала SQL — используем её объяснение напрямую из logic_path или explanation
+
     if (route.startsWith('llm') || route.startsWith('rule+llm')) {
-      // Приоритет: готовое explanation от LLM
       if (u['explanation']) {
         return u['explanation'];
       }
-      
-      // Если есть logic_path — форматируем его в понятный вид
+
       if (u['logic_path']) {
         const lp = u['logic_path'];
-        // Парсим строку вида "Slice: DATE(order_timestamp), Metric: AVG(duration_in_seconds), Filter: status='done'"
         const sliceMatch = lp.match(/Slice:\s*([^,]+)/);
         const metricMatch = lp.match(/Metric:\s*([^,]+)/);
         const filterMatch = lp.match(/Filter:\s*(.+)/);
         
         const parts = [];
 
-        // Сначала разрез (Slice) - это ГРУППИРОВКА
         if (sliceMatch) {
           const slice = sliceMatch[1].trim();
           if (slice.includes('DATE(order_timestamp)') || slice.includes('DATE(driverdone_timestamp)')) {
@@ -640,7 +821,6 @@
           }
         }
 
-        // Потом метрика (Metric) - это АГРЕГАЦИЯ
         if (metricMatch) {
           const metric = metricMatch[1].trim();
           let metricDesc = '';
@@ -693,7 +873,6 @@
           if (metricDesc) parts.push(metricDesc);
         }
 
-        // Фильтр (Filter) - это УСЛОВИЯ
         if (filterMatch) {
           const filter = filterMatch[1].trim().toLowerCase();
           if (filter.includes('done')) parts.push('только завершённые заказы');
@@ -705,8 +884,7 @@
           return 'Смотрю ' + parts.join(', ') + '.';
         }
       }
-      
-      // Fallback: старая логика по полям understanding
+
       const parts = [];
       if (u['агрегация']) {
         const agg = u['агрегация'];
@@ -723,8 +901,7 @@
         return '🔍 Анализирую: ' + parts.join(', ') + '.';
       }
     }
-    
-    // Для rule-based запросов — живое объяснение
+
     const parts = [];
     if (u['метрика'])    parts.push(`смотрю на <b>${escapeHtml(u['метрика'])}</b>`);
     if (u['фильтр'])     parts.push(`отбираю только ${escapeHtml(u['фильтр'])}`);
@@ -742,10 +919,9 @@
     const status = data.status;
     const routeBadge = renderRouteBadge(route);
 
-    // ---- THREAD (right): полный msg--assistant с Explain + SQL ----
     let bubble = '';
     if (status === 'not_recognized') {
-      bubble = 'Не удалось распознать запрос. Попробуйте шаблон или переформулируйте — например «отмены по городам», «выручка по месяцам», «топ-10 водителей».';
+      bubble = 'Не совсем поняла, что именно имеется в виду. Уточните формулировку (метрика/период/разрез), после чего смогу предложить сохранить новое слово в семантический слой.';
     } else if (status === 'blocked') {
       bubble = `Запрос <b>заблокирован</b> guardrails: ${escapeHtml(data.error || '')}`;
     } else if (status === 'error' || status === 'llm_unavailable') {
@@ -764,6 +940,28 @@
     }
     if (data.warnings && data.warnings.length) {
       cards += `<div class="card"><div class="card__head"><span class="card__label">Предупреждения</span></div><div class="interp">${data.warnings.map(w=>`<div class="interp__row"><span class="interp__val">⚠︎ ${escapeHtml(w)}</span></div>`).join('')}</div></div>`;
+    }
+    const resolvedTerm = data?.understanding?.resolved_term;
+    const synonymSource =
+      pendingUnknownPhrase ||
+      ((status === 'ok' && typeof data.confidence === 'number' && data.confidence < 0.7) ? (data.query || '') : '');
+    const synonymCandidate = extractUnknownWord(synonymSource);
+    const canSuggestSynonym =
+      status === 'ok' &&
+      !!synonymCandidate &&
+      typeof resolvedTerm === 'string' &&
+      resolvedTerm.trim().length > 0;
+    if (canSuggestSynonym) {
+      cards += `<div class="card" id="synonymSuggestCard">
+        <div class="card__head">
+          <span class="card__label">Добавить в словарь?</span>
+          <div class="card__actions"><button class="btn btn--sm btn--primary" id="confirmSynonymBtn">✓ Добавить</button></div>
+        </div>
+        <div class="interp">
+          <div class="interp__row"><span class="interp__key">Неизвестное слово</span><span class="interp__val">«${escapeHtml(synonymCandidate)}»</span></div>
+          <div class="interp__row"><span class="interp__key">Связать с термином</span><span class="interp__val"><b>${escapeHtml(resolvedTerm)}</b></span></div>
+        </div>
+      </div>`;
     }
 
     el.innerHTML = `
@@ -787,9 +985,27 @@
         });
       });
     });
+    const confirmSynBtn = el.querySelector('#confirmSynonymBtn');
+    if (confirmSynBtn && canSuggestSynonym) {
+      confirmSynBtn.addEventListener('click', async () => {
+        try {
+          const r = await fetch('/semantic-layer/synonym', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ term: resolvedTerm, synonym: synonymCandidate, actor: 'user' }),
+          });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok || j.ok === false) throw new Error(j.detail || 'Ошибка добавления');
+          pendingUnknownPhrase = '';
+          notify('Синоним добавлен в словарь', 'success');
+          el.querySelector('#synonymSuggestCard')?.remove();
+        } catch {
+          notify('Не удалось добавить синоним', 'error');
+        }
+      });
+    }
     scrollThread();
 
-    // ---- CANVAS (center): только BI-блок с графиком и таблицей ----
     if (status === 'ok' && data.data && data.data.length) {
       renderCanvasBI(data);
     } else {
@@ -811,25 +1027,57 @@
   let currentData = null;
   let currentChartId = '';
   let currentChartType = 'bar';
+  let pendingUnknownPhrase = '';
+  const SYN_STOPWORDS = new Set([
+    'по','за','на','в','из','и','или','с','к','от','до','для','про','о','об','под','над',
+    'покажи','показать','дай','мне','сколько','какой','какая','какие','нужно','надо',
+    'городам','городу','городе','город','месяц','месяца','месяцев','неделя','недели','день','дней','год','года'
+  ]);
+
+  function isKnownSemanticToken(token) {
+    const t = String(token || '').toLowerCase();
+    if (!t) return false;
+    const terms = (typeof dictAllTerms !== 'undefined' && dictAllTerms.length) ? dictAllTerms : FULL_SEMANTIC;
+    for (const item of terms) {
+      const keys = [item.term, ...(item.synonyms || [])].map(x => String(x || '').toLowerCase());
+      for (const key of keys) {
+        const parts = key.split(/\s+/).filter(Boolean);
+        for (const p of parts) {
+          if (p.length < 3) continue;
+          const stem = p.slice(0, Math.max(3, p.length - 2));
+          const tStem = t.slice(0, Math.max(3, t.length - 2));
+          if (t.startsWith(stem) || stem.startsWith(tStem)) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function extractUnknownWord(rawQuery) {
+    const tokens = String(rawQuery || '').toLowerCase().match(/[а-яёa-z0-9_]+/g) || [];
+    for (const tok of tokens) {
+      if (tok.length < 4) continue;
+      if (SYN_STOPWORDS.has(tok)) continue;
+      if (isKnownSemanticToken(tok)) continue;
+      return tok;
+    }
+    return tokens.find(t => t.length >= 4 && !SYN_STOPWORDS.has(t)) || '';
+  }
 
   function renderCanvasBI(data) {
     canvasEmpty.style.display = 'none';
     currentData = data;
-    // защита от устаревших/неподдерживаемых типов: kpi и прочее → bar
     const rec = data.recommended_chart;
     currentChartType = (rec && CHART_LABELS[rec]) ? rec : 'bar';
     currentChartId = 'plot_' + Math.random().toString(36).slice(2, 9);
     const cols = data.columns;
 
-    // KPI-блок удалён по требованию — недостаточно информативен
     const kpis = '';
 
-    // селект типа графика
     const selectOptions = Object.keys(CHART_LABELS).map(t =>
       `<button class="select__option${t === currentChartType ? ' is-active' : ''}" data-type="${t}">${CHART_ICONS[t]}${CHART_LABELS[t]}</button>`
     ).join('');
 
-    // таблица
     const header = cols.map(c => `<th>${escapeHtml(c)}</th>`).join('');
     const rows = data.data.slice(0, 100).map(r =>
       `<tr>${cols.map(c => {
@@ -861,6 +1109,7 @@
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Экспорт отчёта
             </button>
+            <button class="btn btn--sm btn--ghost" id="saveReportFromVizBtn">Сохранить в отчёт</button>
             <div class="export-panel" id="exportPanel" hidden>
               <div class="export-panel__title">Экспортировать как отчёт</div>
               <div class="export-panel__opts">
@@ -899,7 +1148,6 @@
   }
 
   function wireCanvasInteractions() {
-    // ---- chart type selector ----
     const trigger = document.getElementById('chartSelectTrigger');
     const menu    = document.getElementById('chartSelectMenu');
     const label   = document.getElementById('chartSelectLabel');
@@ -919,7 +1167,6 @@
       });
     }
 
-    // ---- export panel ----
     const exportBtn   = document.getElementById('exportBtn');
     const exportPanel = document.getElementById('exportPanel');
     if (exportBtn && exportPanel) {
@@ -928,10 +1175,23 @@
         b.addEventListener('click', () => { doExport(b.dataset.fmt); exportPanel.hidden = true; });
       });
     }
-    // click outside = close
     document.addEventListener('click', closeDropdowns);
 
-    // ---- table CSV/XLSX buttons ----
+    const saveReportBtn = document.getElementById('saveReportFromVizBtn');
+    if (saveReportBtn) {
+      saveReportBtn.addEventListener('click', () => {
+        if (!currentData) return;
+        const suggestedTitle = (currentData.query || 'Новый отчёт').slice(0, 80);
+        if (typeof window.openNewReportModal === 'function') {
+          window.openNewReportModal({
+            title: suggestedTitle,
+            query: currentData.query || '',
+            chart_type: currentChartType || currentData.recommended_chart || 'auto',
+          });
+        }
+      });
+    }
+
     document.querySelectorAll('.bi__table-tools button[data-fmt]').forEach(b => {
       b.addEventListener('click', () => doExport(b.dataset.fmt));
     });
@@ -950,8 +1210,6 @@
     const base = `drivee_${ts}`;
 
     if (fmt === 'csv' || fmt === 'xlsx') {
-      // UTF-8 CSV with BOM (Excel-friendly). Для XLSX-кнопки выдаём .csv с тем же содержимым
-      // (Excel откроет как таблицу); полноценный .xlsx потребует lib — за MVP достаточно CSV.
       const esc = v => {
         if (v === null || v === undefined) return '';
         const s = String(v);
@@ -970,7 +1228,6 @@
       return;
     }
     if (fmt === 'pdf') {
-      // print-to-PDF: открываем простое окно с заголовком + SQL + копией canvas
       const w = window.open('', '_blank');
       const sql = currentData.sql || '';
       w.document.write(`<html><head><meta charset="utf-8"><title>${base}.pdf</title>
@@ -1036,7 +1293,7 @@
     } else if (chart === 'pie') {
       trace = { labels: x, values: y, type: 'pie', textinfo: 'label+percent',
         marker: { colors: ['#146414','#96ea28','#3d6e0e','#5aa320','#2a4f08','#b4f36c','#7ec41a','#1a7a1a','#c9e89c','#4f8a14','#88d043','#264d06'] } };
-    } else { // bar
+    } else {
       trace = { x, y, type: 'bar', marker: { color: '#96ea28', line: { color: '#146414', width: 1 } }, name: cols[1] };
     }
     const layout = (chart === 'pie') ? layoutBase : {
@@ -1047,11 +1304,9 @@
     Plotly.newPlot(id, [trace], layout, { displayModeBar: false, responsive: true });
   }
 
-  // ---------- submit ----------
   const textarea = document.querySelector('.composer textarea');
   const sendBtn  = document.querySelector('.composer .send');
 
-  // ---------- history FIFO-5 (localStorage) ----------
   const HISTORY_KEY = 'drivee.history';
   const historyListEl = document.getElementById('historyList');
   function loadHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch { return []; } }
@@ -1089,11 +1344,28 @@
     const loadingEl = pushAssistantLoading();
     try {
       const r = await fetch('/ask?query=' + encodeURIComponent(q));
+      if (!r.ok) {
+        let reason = `HTTP ${r.status}`;
+        try {
+          const errJson = await r.json();
+          reason = errJson?.detail || errJson?.error || reason;
+        } catch {}
+        throw new Error(reason);
+      }
       const data = await r.json();
       data.query = q;
+      if (data.status === 'not_recognized' || (typeof data.confidence === 'number' && data.confidence < 0.7)) {
+        pendingUnknownPhrase = q;
+      }
       renderAssistant(loadingEl, data);
     } catch (e) {
-      renderAssistant(loadingEl, { status: 'error', error: String(e), query: q, confidence: 0 });
+      const msg = String(e || '');
+      const isNetwork = /Failed to fetch|NetworkError|fetch/i.test(msg);
+      const readable = isNetwork
+        ? 'Бэкенд недоступен. Запустите FastAPI и откройте интерфейс через http://127.0.0.1:8000/'
+        : msg;
+      notify(isNetwork ? 'API недоступен (проверьте запуск FastAPI)' : 'Ошибка выполнения запроса', 'error');
+      renderAssistant(loadingEl, { status: 'error', error: readable, query: q, confidence: 0 });
     }
   }
 
@@ -1102,14 +1374,12 @@
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQuery(textarea.value); }
   });
 
-  // прокидывает текст в composer без отправки
   function prefillComposer(text) {
     textarea.value = text;
     textarea.focus();
     try { textarea.setSelectionRange(text.length, text.length); } catch {}
   }
 
-  // suggestion + template buttons → прямая отправка
   document.querySelectorAll('.suggest__item, .tmpl').forEach(btn => {
     btn.addEventListener('click', () => {
       const text = btn.textContent.trim().replace(/^[^\wа-яА-Я]+/, '');
@@ -1117,7 +1387,6 @@
     });
   });
 
-  // ✎ возле шаблонов — только вставка в поле
   document.querySelectorAll('.tmpl-row').forEach(row => {
     const edit = row.querySelector('.tmpl-edit');
     const tmpl = row.querySelector('.tmpl');
@@ -1129,12 +1398,11 @@
     }
   });
 
-  // new chat — clear canvas + thread + show welcome
   function resetChat() {
     canvasBody.innerHTML = '';
     messagesEl.innerHTML = '';
     canvasEmpty.style.display = 'flex';
-    canvasEmpty.innerHTML = `<h3>Начните с вопроса →</h3><p>График появится здесь, объяснение — в панели справа.</p>`;
+    canvasEmpty.innerHTML = `<div class="bi-empty"><div class="bi-empty__icon"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div><h2>Здесь появится ваш график</h2><p>Задайте вопрос на русском в чате справа — InstantData сгенерирует SQL, выполнит запрос к базе данных и покажет результат в виде графика и таблицы.</p><div class="bi-empty__flow"><span class="flow-pill">1 · Вопрос</span><span class="flow-arrow">→</span><span class="flow-pill">2 · SQL</span><span class="flow-arrow">→</span><span class="flow-pill">3 · График</span><span class="flow-arrow">→</span><span class="flow-pill flow-pill--accent">4 · Решение</span></div></div>`;
     if (welcomeEl) welcomeEl.style.display = '';
   }
   document.getElementById('newChatBtn').addEventListener('click', () => {
@@ -1143,7 +1411,6 @@
   });
   document.getElementById('clearThreadBtn').addEventListener('click', resetChat);
 
-  // status dot → /health
   async function pingHealth() {
     try {
       const r = await fetch('/health');
@@ -1156,11 +1423,6 @@
   }
   pingHealth();
 
-  // =====================================================
-  // DICTIONARY — динамическая загрузка из /semantic-layer
-  // =====================================================
-
-  // Полный семантический слой — fallback если API недоступен
   const FULL_SEMANTIC = [
     { term:'Город (ID)',             kind:'id',        column_expr:'city_id',                      agg:null, filter_sql:null, synonyms:['город','city','регион'],                              is_user_added:false },
     { term:'Часовой пояс',           kind:'id',        column_expr:'offset_hours',                 agg:null, filter_sql:null, synonyms:['UTC','timezone','пояс'],                              is_user_added:false },
@@ -1201,9 +1463,38 @@
   let dictSearchQ = '';
   let deleteTargetTerm = '';
 
-  // modal helpers
+  function formatTgIdDisplay(digitsOnly) {
+    const d = String(digitsOnly || '').replace(/\D/g, '');
+    if (!d) return '';
+    const parts = [];
+    let i = d.length;
+    while (i > 0) {
+      const start = Math.max(0, i - 3);
+      parts.unshift(d.slice(start, i));
+      i = start;
+    }
+    return parts.join(' ');
+  }
+
+  function syncRecipientPreview() {
+    const tgRaw = document.getElementById('tgIdInput')?.value?.trim() || '';
+    const digits = tgRaw.replace(/\s+/g, '').replace(/\D/g, '');
+    const tgShow = digits ? formatTgIdDisplay(digits) : 'не указан';
+    const emailRaw = document.getElementById('emailInput')?.value?.trim() || '';
+    const emailShow = emailRaw || '—';
+    ['nrRecipientTg', 'reportRecipientTg'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = tgShow;
+    });
+    ['nrRecipientEmail', 'reportRecipientEmail'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = emailShow;
+    });
+  }
+  window.syncRecipientPreview = syncRecipientPreview;
+
   const openModal  = (m) => { m.hidden = false; document.body.style.overflow = 'hidden'; };
-  const closeModal = (m) => { m.hidden = true;  document.body.style.overflow = ''; };
+  const closeModal = (m) => { m.hidden = true;  document.body.style.overflow = ''; window.syncRecipientPreview?.(); };
   document.querySelectorAll('.modal [data-close]').forEach(el => el.addEventListener('click', () => closeModal(el.closest('.modal'))));
   document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal').forEach(m => { if (!m.hidden) closeModal(m); }); });
 
@@ -1286,7 +1577,6 @@
     applyDictFilters();
   }
 
-  // автозагрузка если открыли страницу сразу на словаре
   if (location.hash === '#dictionary') loadDict();
 
   document.getElementById('dictChips').addEventListener('click', e => {
@@ -1298,7 +1588,6 @@
   });
   document.getElementById('dictSearch').addEventListener('input', e => { dictSearchQ = e.target.value.trim(); applyDictFilters(); });
 
-  // ---- syn-chip helpers ----
   function getSynonymsFromEditor() {
     return [...document.querySelectorAll('#synEditor .syn-chip')].map(c =>
       c.childNodes[0].textContent.trim()
@@ -1330,7 +1619,6 @@
     }
   });
 
-  // ---- ADD / EDIT MODAL ----
   const termModal = document.getElementById('termModal');
 
   function openAddModal() {
@@ -1377,28 +1665,62 @@
     };
     if (!payload.term || !payload.column_expr) {
       errEl.textContent = 'Заполните обязательные поля: Термин и SQL-выражение.';
+      notify('Заполните обязательные поля термина', 'error');
       errEl.hidden = false; return;
     }
     try {
+      const wasEdit = mode.startsWith('edit:');
+      let r;
       if (mode.startsWith('edit:')) {
         const old = mode.slice(5);
-        await fetch(`/semantic-layer/${encodeURIComponent(old)}`, { method: 'DELETE' });
+        const prev = dictAllTerms.find(x => x.term === old) || { synonyms: [] };
+        const prevSyn = (prev.synonyms || []).map(s => String(s));
+        const nextSyn = payload.synonyms.map(s => String(s));
+        const toDelete = prevSyn.filter(s => !nextSyn.some(n => n.toLowerCase() === s.toLowerCase()));
+        const toAdd = nextSyn.filter(s => !prevSyn.some(p => p.toLowerCase() === s.toLowerCase()));
+        let deletedSynonymsCount = 0;
+        for (const s of toDelete) {
+          const delResp = await fetch(`/semantic-layer/synonym?term=${encodeURIComponent(old)}&synonym=${encodeURIComponent(s)}`, { method: 'DELETE' });
+          if (delResp.ok) deletedSynonymsCount += 1;
+        }
+        if (deletedSynonymsCount > 0) {
+          notify(`Удалено синонимов: ${deletedSynonymsCount}`, 'success');
+        }
+        for (const s of toAdd) {
+          await fetch('/semantic-layer/synonym', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ term: old, synonym: s, actor: 'user' }),
+          });
+        }
+        if (old !== payload.term || document.getElementById('fKind').value !== (prev.kind || '') || document.getElementById('fColExpr').value.trim() !== (prev.column_expr || '').trim()) {
+          await fetch(`/semantic-layer/${encodeURIComponent(old)}`, { method: 'DELETE' });
+          r = await fetch('/semantic-layer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+        } else {
+          r = { ok: true, json: async () => ({ ok: true }) };
+        }
+      } else {
+        r = await fetch('/semantic-layer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
       }
-      const r = await fetch('/semantic-layer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
       if (!r.ok) { const j = await r.json(); throw new Error(j.detail || 'Ошибка сервера'); }
       closeModal(termModal);
       await loadDict();
+      notify(wasEdit ? 'Бизнес-термин обновлён' : 'Бизнес-термин создан', 'success');
     } catch(e) {
       errEl.textContent = e.message;
       errEl.hidden = false;
+      notify('Не удалось сохранить бизнес-термин', 'error');
     }
   });
 
-  // ---- DELETE MODAL ----
   const deleteModal = document.getElementById('deleteModal');
 
   function openDeleteModal(termName) {
@@ -1415,11 +1737,139 @@
     } catch {}
   });
 
-  // ---- SETTINGS MODAL ----
   const settingsModal = document.getElementById('settingsModal');
-  document.getElementById('settingsBtn').addEventListener('click', () => openModal(settingsModal));
+  const PROFILE_DISPLAY_NAME_KEY = 'instantdata_display_name';
 
-  // channel picker
+  function initialsFromDisplayName(name) {
+    const s = String(name || '').trim();
+    if (!s) return '—';
+    const parts = s.split(/\s+/).filter(Boolean);
+    const ch0 = (w) => (w && w.length ? [...w][0] : '');
+    if (parts.length >= 2) {
+      return (ch0(parts[0]) + ch0(parts[parts.length - 1])).toLocaleUpperCase('ru-RU');
+    }
+    const w = parts[0];
+    if ([...w].length >= 2) return [...w].slice(0, 2).join('').toLocaleUpperCase('ru-RU');
+    return ch0(w).toLocaleUpperCase('ru-RU') || '—';
+  }
+
+  function welcomeFirstName(fullName) {
+    const s = String(fullName || '').trim();
+    if (!s) return 'друг';
+    return s.split(/\s+/)[0];
+  }
+
+  function readStoredDisplayName() {
+    try {
+      return localStorage.getItem(PROFILE_DISPLAY_NAME_KEY) || '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function applyProfileDisplayToChrome(displayName) {
+    const trimmed = String(displayName || '').trim();
+    const name = trimmed || 'Пользователь';
+    const av = document.getElementById('sidebarAvatar');
+    const nm = document.getElementById('sidebarUserName');
+    const wel = document.getElementById('welcomeName');
+    if (nm) nm.textContent = name;
+    if (av) av.textContent = initialsFromDisplayName(name);
+    if (wel) wel.textContent = trimmed ? welcomeFirstName(trimmed) : 'друг';
+  }
+
+  function syncProfileFormFromStorage() {
+    const inp = document.getElementById('profName');
+    if (inp) inp.value = readStoredDisplayName();
+  }
+  window.syncProfileFormFromStorage = syncProfileFormFromStorage;
+
+  function initProfileChromeFromStorage() {
+    const stored = readStoredDisplayName();
+    applyProfileDisplayToChrome(stored);
+    syncProfileFormFromStorage();
+  }
+
+  function persistDisplayNameFromForm() {
+    const raw = document.getElementById('profName')?.value?.trim() || '';
+    try {
+      if (raw) localStorage.setItem(PROFILE_DISPLAY_NAME_KEY, raw);
+      else localStorage.removeItem(PROFILE_DISPLAY_NAME_KEY);
+    } catch (_) {}
+    applyProfileDisplayToChrome(raw);
+  }
+
+  async function refreshTelegramStatus() {
+    const textEl = document.getElementById('tgStatusText');
+    if (!textEl) return;
+    const raw = document.getElementById('tgIdInput')?.value?.trim();
+    if (!raw || !/^\d+$/.test(raw)) {
+      textEl.textContent = 'Введите Telegram ID — покажем связь с ботом и дату последней рассылки';
+      return;
+    }
+    try {
+      const r = await fetch('/settings/telegram/' + encodeURIComponent(raw));
+      const j = await r.json();
+      if (!r.ok) throw new Error();
+      const linked = !!j.bot_linked;
+      const last = j.last_dispatch_at;
+      const linkPart = linked
+        ? 'Бот привязан (есть /start в базе)'
+        : 'В БД нет /start — тест всё равно уйдёт в личку, если вы уже открывали чат с ботом';
+      let timePart;
+      if (last) {
+        const d = new Date(last);
+        timePart = !Number.isNaN(d.getTime())
+          ? ('Последняя рассылка: ' + d.toLocaleString('ru-RU', { dateStyle: 'medium', timeStyle: 'short' }))
+          : ('Последняя рассылка: ' + last);
+      } else {
+        timePart = 'Рассылок по сохранённым отчётам ещё не было';
+      }
+      textEl.textContent = [linkPart, timePart].join(' · ');
+    } catch {
+      textEl.textContent = 'Не удалось загрузить статус';
+    }
+  }
+  window.refreshTelegramStatus = refreshTelegramStatus;
+
+  function applyDeliveryToForm(s) {
+    const tg = document.getElementById('tgIdInput');
+    if (tg) {
+      tg.value =
+        s.telegram_user_id != null && s.telegram_user_id !== ''
+          ? String(s.telegram_user_id)
+          : '';
+    }
+    const em = document.getElementById('emailInput');
+    if (em && typeof s.email === 'string') em.value = s.email;
+    const ch = s.channel && ['telegram', 'email', 'both'].includes(s.channel) ? s.channel : 'both';
+    document.querySelectorAll('.channel-opt').forEach((btn) => {
+      btn.classList.toggle('is-active', btn.dataset.channel === ch);
+    });
+    document.querySelectorAll('.channel-field').forEach((f) => {
+      f.classList.toggle('is-active', ch === 'both' || f.dataset.channelField === ch);
+    });
+  }
+
+  async function loadDeliverySettings() {
+    try {
+      const r = await fetch('/settings/delivery');
+      if (!r.ok) return;
+      const j = await r.json();
+      if (!j.ok) return;
+      applyDeliveryToForm(j);
+    } catch (_) {}
+  }
+  window.loadDeliverySettings = loadDeliverySettings;
+
+  document.getElementById('settingsBtn')?.addEventListener('click', async () => {
+    await loadDeliverySettings();
+    syncProfileFormFromStorage();
+    openModal(settingsModal);
+    refreshTelegramStatus();
+    syncRecipientPreview();
+  });
+
   document.querySelectorAll('.channel-opt').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.channel-opt').forEach(b => b.classList.remove('is-active'));
@@ -1431,183 +1881,821 @@
       });
     });
   });
+
+  function requireTgIdInput() {
+    const v = document.getElementById('tgIdInput')?.value?.trim();
+    if (!v) {
+      notify('Укажите Telegram ID (число из ответа бота на /start или /id)', 'error');
+      return null;
+    }
+    return v;
+  }
+  window.requireTgIdInput = requireTgIdInput;
+
+  document.getElementById('tgIdInput')?.addEventListener('input', () => {
+    window.clearTimeout(window._tgStatusT);
+    window._tgStatusT = window.setTimeout(() => refreshTelegramStatus(), 350);
+    syncRecipientPreview();
+  });
+  document.getElementById('emailInput')?.addEventListener('input', () => {
+    syncRecipientPreview();
+  });
+
+  document.getElementById('settingsModal')?.addEventListener('click', async (e) => {
+    const btn = e.target.closest('#tgTestBtn');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const telegram_user_id = requireTgIdInput();
+    if (!telegram_user_id) return;
+    try {
+      const r = await fetch('/settings/telegram/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegram_user_id: Number(telegram_user_id) }),
+      });
+      const raw = await r.text();
+      let j = {};
+      try { j = JSON.parse(raw); } catch (_) {}
+      if (!r.ok) {
+        const d = j.detail;
+        let msg = 'Ошибка';
+        if (typeof d === 'string') msg = d;
+        else if (Array.isArray(d)) msg = d.map((x) => x.msg || JSON.stringify(x)).join(' ');
+        else if (d != null) msg = String(d);
+        throw new Error(msg);
+      }
+      notify('Тест отправлен — проверьте Telegram', 'success');
+      await refreshTelegramStatus();
+    } catch (e) {
+      notify(e.message || 'Тест не удался (проверьте токен бота и что диалог с ботом открыт)', 'error');
+    }
+  });
+
+  document.getElementById('saveSettings')?.addEventListener('click', async () => {
+    persistDisplayNameFromForm();
+    const telegram_user_id = requireTgIdInput();
+    if (!telegram_user_id) return;
+    const channel =
+      document.querySelector('.channel-opt.is-active')?.dataset?.channel || 'both';
+    try {
+      const r = await fetch('/settings/delivery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          telegram_user_id: Number(telegram_user_id),
+          email: document.getElementById('emailInput')?.value?.trim() || '',
+          channel,
+        }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok) throw new Error(typeof j.detail === 'string' ? j.detail : 'save failed');
+      notify('Настройки сохранены', 'success');
+      await refreshTelegramStatus();
+      closeModal(settingsModal);
+    } catch (e) {
+      notify('Не удалось сохранить настройки доставки (имя в интерфейсе уже обновлено)', 'error');
+    }
+  });
+
+  (async () => {
+    initProfileChromeFromStorage();
+    await loadDeliverySettings();
+    syncRecipientPreview();
+  })();
 </script>
 
-<!-- ============ MODAL: SETTINGS ============ -->
-<div class="modal" id="settingsModal" hidden>
+<!-- MODAL: Новый отчёт (wizard) -->
+<div class="modal" id="newReportModal" hidden>
   <div class="modal__backdrop" data-close></div>
   <div class="modal__dialog modal__dialog--wide">
     <div class="modal__head">
       <div>
-        <div class="modal__eyebrow">Профиль и настройки</div>
-        <h3 class="modal__title">Настройки аккаунта</h3>
+        <div class="modal__eyebrow">Новый отчёт</div>
+        <h3 class="modal__title">Создать отчёт из SQL-вопроса</h3>
       </div>
       <button class="icon-btn modal__close" data-close title="Закрыть">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-
     <div class="modal__body">
+      <div class="steps-strip">
+        <div class="step-dot is-active"><span>1</span>Вопрос</div>
+        <div class="step-line"></div>
+        <div class="step-dot is-active"><span>2</span>Визуализация</div>
+        <div class="step-line"></div>
+        <div class="step-dot is-active"><span>3</span>Расписание</div>
+      </div>
 
-      <!-- Profile -->
-      <div class="settings-sec">
-        <div class="settings-sec__title">Профиль</div>
-        <div class="settings-sec__body">
+      <div class="wizard-sec">
+        <div class="wizard-sec__num">1</div>
+        <div class="wizard-sec__body">
+          <div class="field"><label>Название отчёта</label>
+            <input type="text" id="nrTitle" placeholder="например: Выручка по городам · неделя"/></div>
+          <div class="field"><label>Вопрос к базе данных</label>
+            <textarea id="nrQuery" rows="3" placeholder="например: Покажи выручку по городам за последние 7 дней"></textarea>
+            <div class="field__hint">InstantData преобразует его в SQL и выполнит к БД. Вопрос можно править позже.</div></div>
+        </div>
+      </div>
+
+      <div class="wizard-sec">
+        <div class="wizard-sec__num">2</div>
+        <div class="wizard-sec__body">
+          <div class="field"><label>Тип визуализации</label>
+            <div class="viz-picker">
+              <label class="viz-opt"><input type="radio" name="nrViz" value="bar" checked/><span class="viz-opt__inner"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="8"/><rect x="10" y="7" width="4" height="13"/><rect x="17" y="3" width="4" height="17"/></svg>Столбчатый</span></label>
+              <label class="viz-opt"><input type="radio" name="nrViz" value="line"/><span class="viz-opt__inner"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/></svg>Линейный</span></label>
+              <label class="viz-opt"><input type="radio" name="nrViz" value="pie"/><span class="viz-opt__inner"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12A9 9 0 1 1 12 3v9z"/></svg>Круговой</span></label>
+              <label class="viz-opt"><input type="radio" name="nrViz" value="area"/><span class="viz-opt__inner"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8v14H3z"/></svg>Area</span></label>
+              <label class="viz-opt"><input type="radio" name="nrViz" value="table"/><span class="viz-opt__inner"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="4" x2="9" y2="20"/></svg>Таблица</span></label>
+              <label class="viz-opt"><input type="radio" name="nrViz" value="auto"/><span class="viz-opt__inner"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Авто (ИИ)</span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wizard-sec">
+        <div class="wizard-sec__num">3</div>
+        <div class="wizard-sec__body">
+          <div class="field-row-toggle">
+            <label class="toggle"><input type="checkbox" id="nrSchedule" checked/>
+              <span class="toggle__track"><span class="toggle__thumb"></span></span>
+              <div class="toggle__text"><b>Отправлять по расписанию</b><small>Если выключено, отчёт будет сохранён как одноразовый.</small></div>
+            </label>
+          </div>
           <div class="field-row">
-            <div class="field">
-              <label>Имя</label>
-              <input type="text" id="profName" value="Иван Иванов">
-            </div>
-            <div class="field">
-              <label>Должность</label>
-              <input type="text" value="Менеджер · Аналитика">
+            <div class="field"><label>Частота</label>
+              <select id="nrFreq"><option value="daily">Ежедневно</option><option value="weekdays">По будням</option><option value="weekly" selected>Еженедельно</option><option value="monthly">Ежемесячно</option></select></div>
+            <div class="field"><label>Время (МСК)</label>
+              <input type="time" id="nrTime" value="09:00"/>
             </div>
           </div>
-          <div class="field">
-            <label>Email</label>
-            <input type="text" value="ivan@company.ru">
+          <div class="field-row" id="nrSchedExtraRow">
+            <div class="field" id="nrWeekdayWrap">
+              <label>День недели</label>
+              <select id="nrWeekday"><option>Пн</option><option>Вт</option><option>Ср</option><option>Чт</option><option>Пт</option><option>Сб</option><option>Вс</option></select>
+            </div>
+            <div class="field" id="nrMonthdayWrap" hidden>
+              <label>Число месяца</label>
+              <select id="nrDom"></select>
+              </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Куда отправлять отчёты -->
-      <div class="settings-sec">
-        <div class="settings-sec__title">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          Куда отправлять отчёты
-        </div>
-        <div class="settings-sec__body">
-
-          <div class="channel-picker" id="channelPicker" role="tablist">
-            <button class="channel-opt" data-channel="telegram" type="button">
-              <span class="channel-opt__ico">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-              </span>
-              <div class="channel-opt__text">
-                <b>Telegram</b>
-                <small>Бот напишет в личку</small>
-              </div>
-              <span class="channel-opt__check">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              </span>
-            </button>
-            <button class="channel-opt" data-channel="email" type="button">
-              <span class="channel-opt__ico">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              </span>
-              <div class="channel-opt__text">
-                <b>Email</b>
-                <small>Письмо с вложением</small>
-              </div>
-              <span class="channel-opt__check">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              </span>
-            </button>
-            <button class="channel-opt is-active" data-channel="both" type="button">
-              <span class="channel-opt__ico">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/><polyline points="20 12 9 23"/></svg>
-              </span>
-              <div class="channel-opt__text">
-                <b>Оба канала</b>
-                <small>И в Telegram, и на email</small>
-              </div>
-              <span class="channel-opt__check">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              </span>
-            </button>
+          <div class="next-run" id="nrNextRunRow" hidden>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Следующая отправка: <b id="nrNextRunValue">—</b>
           </div>
-
-          <div class="channel-fields">
-            <div class="channel-field is-active" data-channel-field="telegram">
-              <div class="field">
-                <label>Telegram ID</label>
-                <div class="input-with-action">
-                  <input type="text" id="tgIdInput" value="123456789" placeholder="например: 987654321" inputmode="numeric">
-                  <button class="btn btn--ghost btn--sm" type="button">Тест</button>
-                </div>
-                <div class="field__hint">
-                  Отчёты придут в личку от бота <b>@InstantData_bot</b>.
-                  Не знаете свой ID? Напишите боту <b>@userinfobot</b> — он пришлёт число.
-                </div>
+          <div class="field"><label>Кому отправлять</label>
+              <div class="recipient-card">
+                <div class="recipient-card__chans" data-recipient-chans>
+                <span class="chan-pill chan-pill--tg"><span class="chan-pill__ico"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span><span class="chan-pill__body"><b>Telegram</b><small id="nrRecipientTg">не указан</small></span></span>
+                <span class="chan-pill chan-pill--mail"><span class="chan-pill__ico"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span><span class="chan-pill__body"><b>Email</b><small id="nrRecipientEmail">—</small></span></span>
               </div>
-              <div class="tg-status tg-status--ok">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Бот привязан · последняя рассылка 21 апр. 2026
-              </div>
+              <button class="btn btn--ghost btn--sm" data-open-settings type="button">Изменить</button>
             </div>
-
-            <div class="channel-field is-active" data-channel-field="email">
-              <div class="field">
-                <label>Email для отчётов</label>
-                <div class="input-with-action">
-                  <input type="text" id="emailInput" value="ivan@company.ru" placeholder="name@company.ru">
-                  <button class="btn btn--ghost btn--sm" type="button">Тест</button>
-                </div>
-                <div class="field__hint">
-                  Письмо придёт с адреса <b>reports@instantdata.ru</b>. PDF-отчёт будет во вложении.
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Notifications -->
-      <div class="settings-sec">
-        <div class="settings-sec__title">Уведомления</div>
-        <div class="settings-sec__body">
-          <label class="toggle toggle--row">
-            <input type="checkbox" checked>
-            <span class="toggle__track"><span class="toggle__thumb"></span></span>
-            <div class="toggle__text">
-              <b>Отчёты по расписанию</b>
-              <small>Автоматическая рассылка выбранным выше способом.</small>
-            </div>
-          </label>
-          <label class="toggle toggle--row">
-            <input type="checkbox" checked>
-            <span class="toggle__track"><span class="toggle__thumb"></span></span>
-            <div class="toggle__text">
-              <b>Алерты при отклонении метрик</b>
-              <small>ИИ сообщит, если данные сильно отклонились от нормы.</small>
-            </div>
-          </label>
-        </div>
-      </div>
-
-      <!-- Interface -->
-      <div class="settings-sec">
-        <div class="settings-sec__title">Интерфейс</div>
-        <div class="settings-sec__body">
-          <div class="field-row">
-            <div class="field">
-              <label>Язык</label>
-              <select>
-                <option selected>Русский</option>
-                <option>English</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Тема</label>
-              <select>
-                <option selected>Светлая</option>
-                <option>Тёмная</option>
-                <option>Системная</option>
-              </select>
-            </div>
+            <div class="field__hint">Канал и адреса задаются в <b>настройках</b> (⚙ внизу левой колонки). Здесь показываются текущие значения из профиля.</div>
           </div>
         </div>
       </div>
-
     </div>
-
     <div class="modal__foot">
       <button class="btn btn--ghost" data-close>Отмена</button>
-      <button class="btn btn--primary" id="saveSettings">Сохранить настройки</button>
+      <button class="btn btn--primary" id="nrCreate">Создать отчёт</button>
     </div>
   </div>
 </div>
+
+<!-- MODAL: редактирование отчёта -->
+<div class="modal" id="reportModal" hidden>
+  <div class="modal__backdrop" data-close></div>
+  <div class="modal__dialog">
+    <div class="modal__head">
+      <div>
+        <div class="modal__eyebrow">Настройки отчёта</div>
+        <h3 class="modal__title" id="reportModalTitle" contenteditable="false" spellcheck="false">Отчёт</h3>
+      </div>
+      <button class="icon-btn modal__close" data-close title="Закрыть">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="field-row-toggle">
+        <label class="toggle"><input type="checkbox" id="reportSubscribe" checked/>
+          <span class="toggle__track"><span class="toggle__thumb"></span></span>
+          <div class="toggle__text"><b>Подписаться на рассылку</b><small>Отчёт будет автоматически формироваться и отправляться по расписанию.</small></div>
+        </label>
+      </div>
+      <div class="sched-settings" id="schedSettings">
+        <div class="field-row field-row--report-sched-top">
+          <div class="field report-sched-freq"><label>Частота</label>
+            <select id="reportFreq"><option value="daily">Ежедневно</option><option value="weekdays">По будням (Пн–Пт)</option><option value="weekly" selected>Еженедельно</option><option value="monthly">Ежемесячно</option></select></div>
+          <div class="field report-sched-extra" id="reportWeekdayWrap"><label>День недели</label>
+            <select id="reportWeekday"><option>Пн</option><option>Вт</option><option>Ср</option><option>Чт</option><option>Пт</option><option>Сб</option><option>Вс</option></select></div>
+          <div class="field report-sched-extra" id="reportMonthdayWrap" hidden><label>Число месяца</label>
+            <select id="reportDom"></select>
+            </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Время (МСК)</label>
+            <input type="time" id="reportTime" value="09:00"/>
+            </div>
+          <div class="field"><label>Формат</label>
+            <select id="reportFormat"><option>PDF (с графиком и SQL)</option><option>PNG (только график)</option><option>XLSX (Excel)</option><option>CSV (таблица)</option></select></div>
+        </div>
+        <div class="field"><label>Кому отправлять</label>
+          <div class="recipient-card">
+            <div class="recipient-card__chans" data-recipient-chans>
+              <span class="chan-pill chan-pill--tg"><span class="chan-pill__ico"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span><span class="chan-pill__body"><b>Telegram</b><small id="reportRecipientTg">не указан</small></span></span>
+              <span class="chan-pill chan-pill--mail"><span class="chan-pill__ico"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span><span class="chan-pill__body"><b>Email</b><small id="reportRecipientEmail">—</small></span></span>
+            </div>
+            <button class="btn btn--ghost btn--sm" data-open-settings type="button">Изменить</button>
+          </div>
+          <div class="field__hint">Канал и адреса — в <b>настройках</b> (⚙ внизу левой колонки). Здесь — актуальные значения из профиля.</div>
+        </div>
+        <div class="next-run" id="nextRun">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Следующая отправка: <b id="nextRunValue">—</b>
+        </div>
+      </div>
+      <div class="modal__divider"></div>
+      <div class="menu-actions">
+        <button class="menu-item" id="reportRenameBtn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>Переименовать</button>
+        <button class="menu-item" id="reportDuplicateBtn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Дублировать</button>
+        <button class="menu-item" id="reportDownloadBtn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Скачать сейчас</button>
+        <button class="menu-item menu-item--danger"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>Удалить отчёт</button>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--ghost" data-close>Отмена</button>
+      <button class="btn btn--primary" data-close>Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const openModal = (el) => { if (el) el.hidden = false; };
+    const closeModal = (el) => {
+      if (el) el.hidden = true;
+      window.syncRecipientPreview?.();
+    };
+
+    document.querySelectorAll('#newReportModal [data-close], #reportModal [data-close]').forEach(el => {
+      el.addEventListener('click', () => closeModal(el.closest('.modal')));
+    });
+
+    document.querySelectorAll('.view--charts .btn--primary').forEach(btn => {
+      if (btn.textContent.trim().startsWith('＋')) {
+        btn.addEventListener('click', () => {
+          openModal(document.getElementById('newReportModal'));
+          window.syncRecipientPreview?.();
+          window.syncNrScheduleUI?.();
+          window.updateNrNextRunLabel?.();
+        });
+      }
+    });
+
+    document.querySelectorAll('.view--charts .report').forEach(card => {
+      const menuBtn = card.querySelector('.report__head .icon-btn');
+      const title = card.querySelector('h3')?.textContent?.trim() || 'Отчёт';
+      if (menuBtn) {
+        menuBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const m = document.getElementById('reportModal');
+          const t = document.getElementById('reportModalTitle');
+          if (t) t.textContent = title;
+          openModal(m);
+        });
+      }
+    });
+
+    const subscribeEl = document.getElementById('reportSubscribe');
+    const schedBlock = document.getElementById('schedSettings');
+    const syncSched = () => {
+      if (schedBlock && subscribeEl) schedBlock.style.display = subscribeEl.checked ? '' : 'none';
+      window.updateReportNextRunLabel?.();
+    };
+    if (subscribeEl) { subscribeEl.addEventListener('change', syncSched); syncSched(); }
+
+    document.querySelectorAll('[data-open-settings]').forEach(b => {
+      b.addEventListener('click', async () => {
+        closeModal(document.getElementById('newReportModal'));
+        closeModal(document.getElementById('reportModal'));
+        await window.loadDeliverySettings?.();
+        window.syncProfileFormFromStorage?.();
+        openModal(document.getElementById('settingsModal'));
+        window.refreshTelegramStatus?.();
+      });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const opened = [...document.querySelectorAll('.modal')].reverse().find(m => !m.hidden);
+      if (opened) closeModal(opened);
+    });
+  })();
+</script>
+
+<script>
+  (function () {
+    const reportsListEl = document.getElementById('reportsList');
+    if (!reportsListEl) return;
+
+    let reportsState = [];
+    let activeReportId = null;
+    let activeReport = null;
+
+    const WEEK_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    const WEEK_LONG_TO_SHORT = {
+      понедельник: 'Пн', вторник: 'Вт', среда: 'Ср', четверг: 'Чт',
+      пятница: 'Пт', суббота: 'Сб', воскресенье: 'Вс',
+    };
+
+    function fillDomMonthSelects() {
+      ['nrDom', 'reportDom'].forEach((id) => {
+        const sel = document.getElementById(id);
+        if (!sel || sel.options.length) return;
+        for (let i = 1; i <= 31; i += 1) {
+          const o = document.createElement('option');
+          o.value = String(i);
+          o.textContent = String(i);
+          sel.appendChild(o);
+        }
+      });
+    }
+    fillDomMonthSelects();
+
+    function weekShortFromDay(day) {
+      const s = String(day ?? '').trim();
+      if (!s) return 'Пн';
+      const low = s.toLowerCase();
+      if (WEEK_LONG_TO_SHORT[low]) return WEEK_LONG_TO_SHORT[low];
+      const two = s.slice(0, 2);
+      return WEEK_SHORT.includes(two) ? two : 'Пн';
+    }
+
+    function syncNrScheduleUI() {
+      const freq = document.getElementById('nrFreq')?.value || 'weekly';
+      const row = document.getElementById('nrSchedExtraRow');
+      const w = document.getElementById('nrWeekdayWrap');
+      const m = document.getElementById('nrMonthdayWrap');
+      if (!row || !w || !m) return;
+      if (freq === 'daily' || freq === 'weekdays') {
+        row.hidden = true;
+        w.hidden = true;
+        m.hidden = true;
+        updateNrNextRunLabel();
+        return;
+      }
+      row.hidden = false;
+      w.hidden = freq !== 'weekly';
+      m.hidden = freq !== 'monthly';
+      updateNrNextRunLabel();
+    }
+    window.syncNrScheduleUI = syncNrScheduleUI;
+
+    function syncReportScheduleUI() {
+      const freq = document.getElementById('reportFreq')?.value || 'weekly';
+      const w = document.getElementById('reportWeekdayWrap');
+      const m = document.getElementById('reportMonthdayWrap');
+      if (!w || !m) return;
+      w.hidden = freq !== 'weekly';
+      m.hidden = freq !== 'monthly';
+      updateReportNextRunLabel();
+    }
+    window.syncReportScheduleUI = syncReportScheduleUI;
+
+    function dayPayloadFromNrForm() {
+      const freq = document.getElementById('nrFreq')?.value || 'weekly';
+      if (freq === 'weekly') return document.getElementById('nrWeekday')?.value || 'Пн';
+      if (freq === 'monthly') return document.getElementById('nrDom')?.value || '1';
+      return null;
+    }
+
+    function dayPayloadFromReportForm() {
+      const freq = document.getElementById('reportFreq')?.value || 'weekly';
+      if (freq === 'weekly') return document.getElementById('reportWeekday')?.value || 'Пн';
+      if (freq === 'monthly') return document.getElementById('reportDom')?.value || '1';
+      return null;
+    }
+
+    const CRON_DOW_TO_RU = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+    const SHORT_TO_CRON_DOW = { Пн: 1, Вт: 2, Ср: 3, Чт: 4, Пт: 5, Сб: 6, Вс: 0 };
+    const MO_SHORT_RU = ['янв.', 'фев.', 'мар.', 'апр.', 'мая', 'июн.', 'июл.', 'авг.', 'сен.', 'окт.', 'ноя', 'дек.'];
+    const MSK_OFFSET_H = 3;
+
+    function mskWallToUtcMs(y, m0, dom, hh, mm) {
+      return Date.UTC(y, m0, dom, hh - MSK_OFFSET_H, mm, 0, 0);
+    }
+
+    function mskYmdFromUtcMs(ms) {
+      const s = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/Moscow',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date(ms));
+      const parts = s.split('-').map((x) => parseInt(x, 10));
+      return { y: parts[0], m0: parts[1] - 1, d: parts[2] };
+    }
+
+    function addMskDays(ymd, deltaDays) {
+      const t = mskWallToUtcMs(ymd.y, ymd.m0, ymd.d + deltaDays, 12, 0);
+      return mskYmdFromUtcMs(t);
+    }
+
+    function mskCronDowFromYmd(y, m0, d) {
+      const t = mskWallToUtcMs(y, m0, d, 12, 0);
+      const wd = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Europe/Moscow',
+        weekday: 'short',
+      }).format(new Date(t));
+      const key = wd.replace(/\.$/, '').slice(0, 3);
+      const map = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+      return map[key] ?? 0;
+    }
+
+    function pad2(n) {
+      return String(n).padStart(2, '0');
+    }
+
+    function formatNextRunLine(freq, y, m0, d, cronDow, hh, mm) {
+      const t = `${pad2(hh)}:${pad2(mm)}`;
+      if (freq === 'monthly') {
+        return `${d} ${MO_SHORT_RU[m0]}, ${t}`;
+      }
+      return `${CRON_DOW_TO_RU[cronDow]}, ${t}`;
+    }
+
+    function computeNextSendPreview({ freq, timeStr, dayWeek, dayMonthStr }) {
+      const p = (timeStr || '09:00').split(':');
+      let hh = parseInt(p[0], 10);
+      let mm = parseInt(p[1], 10);
+      if (Number.isNaN(hh)) hh = 9;
+      if (Number.isNaN(mm)) mm = 0;
+      hh = Math.min(23, Math.max(0, hh));
+      mm = Math.min(59, Math.max(0, mm));
+      const now = Date.now();
+      const start = mskYmdFromUtcMs(now);
+      for (let k = 0; k < 500; k += 1) {
+        const ymd = addMskDays(start, k);
+        const { y, m0, d } = ymd;
+        const cronDow = mskCronDowFromYmd(y, m0, d);
+        const tSend = mskWallToUtcMs(y, m0, d, hh, mm);
+        if (tSend <= now) continue;
+        let ok = false;
+        if (freq === 'daily') ok = true;
+        else if (freq === 'weekdays') ok = cronDow >= 1 && cronDow <= 5;
+        else if (freq === 'weekly') ok = SHORT_TO_CRON_DOW[dayWeek] === cronDow;
+        else if (freq === 'monthly') {
+          const want = Math.min(31, Math.max(1, parseInt(dayMonthStr, 10) || 1));
+          const dim = new Date(y, m0 + 1, 0).getDate();
+          const domRun = Math.min(want, dim);
+          ok = d === domRun;
+        }
+        if (!ok) continue;
+        return formatNextRunLine(freq, y, m0, d, cronDow, hh, mm);
+      }
+      return '—';
+    }
+
+    function computeNextReportRunLabel() {
+      const enabled = document.getElementById('reportSubscribe')?.checked;
+      if (!enabled) return '—';
+      return computeNextSendPreview({
+        freq: document.getElementById('reportFreq')?.value || 'weekly',
+        timeStr: document.getElementById('reportTime')?.value || '09:00',
+        dayWeek: document.getElementById('reportWeekday')?.value || 'Пн',
+        dayMonthStr: document.getElementById('reportDom')?.value || '1',
+      });
+    }
+
+    function updateNrNextRunLabel() {
+      const row = document.getElementById('nrNextRunRow');
+      const b = document.getElementById('nrNextRunValue');
+      if (!row || !b) return;
+      if (!document.getElementById('nrSchedule')?.checked) {
+        row.hidden = true;
+        return;
+      }
+      row.hidden = false;
+      b.textContent = computeNextSendPreview({
+        freq: document.getElementById('nrFreq')?.value || 'weekly',
+        timeStr: document.getElementById('nrTime')?.value || '09:00',
+        dayWeek: document.getElementById('nrWeekday')?.value || 'Пн',
+        dayMonthStr: document.getElementById('nrDom')?.value || '1',
+      });
+    }
+    window.updateNrNextRunLabel = updateNrNextRunLabel;
+
+    function updateReportNextRunLabel() {
+      const b = document.getElementById('nextRunValue');
+      if (!b) return;
+      b.textContent = computeNextReportRunLabel();
+    }
+    window.updateReportNextRunLabel = updateReportNextRunLabel;
+
+    function resetNewReportModal() {
+      const titleEl = document.getElementById('nrTitle');
+      const queryEl = document.getElementById('nrQuery');
+      const scheduleEl = document.getElementById('nrSchedule');
+      const freqEl = document.getElementById('nrFreq');
+      const wdayEl = document.getElementById('nrWeekday');
+      const domEl = document.getElementById('nrDom');
+      const timeEl = document.getElementById('nrTime');
+      if (titleEl) titleEl.value = '';
+      if (queryEl) queryEl.value = '';
+      if (scheduleEl) scheduleEl.checked = true;
+      if (freqEl) freqEl.value = 'weekly';
+      if (wdayEl) wdayEl.value = 'Пн';
+      if (domEl) domEl.value = '1';
+      if (timeEl) timeEl.value = '09:00';
+      const autoViz = document.querySelector('input[name="nrViz"][value="auto"]');
+      if (autoViz) autoViz.checked = true;
+      syncNrScheduleUI();
+      updateNrNextRunLabel();
+    }
+    function openNewReportModal(prefill = {}) {
+      resetNewReportModal();
+      const titleEl = document.getElementById('nrTitle');
+      const queryEl = document.getElementById('nrQuery');
+      if (titleEl && prefill.title) titleEl.value = prefill.title;
+      if (queryEl && prefill.query) queryEl.value = prefill.query;
+      if (prefill.chart_type) {
+        const viz = document.querySelector(`input[name="nrViz"][value="${prefill.chart_type}"]`);
+        if (viz) viz.checked = true;
+      }
+      document.getElementById('newReportModal').hidden = false;
+      syncNrScheduleUI();
+      updateNrNextRunLabel();
+      window.syncRecipientPreview?.();
+    }
+    window.openNewReportModal = openNewReportModal;
+
+    const chartNames = {
+      bar: 'Столбчатый', line: 'Линейный', pie: 'Круговой',
+      area: 'Area', table: 'Таблица', auto: 'Авто'
+    };
+
+    const miniPreview = (chart) => {
+      if (chart === 'line' || chart === 'area') {
+        return `<svg viewBox="0 0 200 80" class="mini-line" preserveAspectRatio="none"><polyline points="0,60 30,45 60,52 90,30 120,38 150,18 180,25 200,10" fill="none" stroke="#96ea28" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      }
+      if (chart === 'pie') {
+        return `<div class="mini-pie"><div class="mini-pie__donut"></div><span class="mini-pie__val">%</span></div>`;
+      }
+      if (chart === 'table') {
+        return `<div class="mini-table"><div><span>Поле</span><span>Значение</span></div><div><span>...</span><span class="v">...</span></div></div>`;
+      }
+      return `<div class="mini-bars"><span style="--h:88%"></span><span style="--h:72%"></span><span style="--h:64%"></span><span style="--h:54%"></span><span style="--h:43%"></span></div>`;
+    };
+
+    const scheduleText = (r) => {
+      if (!r.schedule_enabled) return `<span class="sched sched--off">Без расписания</span>`;
+      const f = r.freq === 'daily' ? 'ежедневно' : r.freq === 'weekdays' ? 'по будням' : r.freq === 'monthly' ? 'ежемесячно' : 'еженедельно';
+      let d = '';
+      if (r.freq === 'weekly' && r.day) d = `${r.day}, `;
+      else if (r.freq === 'monthly' && r.day) d = `${r.day} числа, `;
+      return `<span class="sched"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${d}${r.time || '09:00'} · ${f}</span>`;
+    };
+
+    async function loadReports() {
+      const r = await fetch('/reports');
+      const j = await r.json();
+      reportsState = j.reports || [];
+      if (!reportsState.length) {
+        reportsListEl.innerHTML = '<div class="history-item__empty">Пока нет сохранённых отчётов</div>';
+        return;
+      }
+      reportsListEl.innerHTML = reportsState.map((rpt) => {
+        const chart = rpt.chart_type || 'auto';
+        const isTable = chart === 'table';
+        return `<article class="report" data-report-id="${rpt.id}">
+          <div class="report__head">
+            <span class="report__type">${chartNames[chart] || 'Авто'}</span>
+            <button class="icon-btn report__menu-btn" title="Меню">⋯</button>
+          </div>
+          <div class="report__preview ${isTable ? 'report__preview--table' : ''}">${miniPreview(chart)}</div>
+          <h3>${escapeHtml(rpt.name)}</h3>
+          <p>${escapeHtml(rpt.query)}</p>
+          <div class="report__foot">${scheduleText(rpt)}<span class="report__date">${new Date(rpt.updated_at || rpt.created_at).toLocaleDateString('ru-RU')}</span></div>
+        </article>`;
+      }).join('');
+    }
+
+    const nrCreate = document.getElementById('nrCreate');
+    if (nrCreate) {
+      nrCreate.addEventListener('click', async () => {
+        const tgStr = typeof window.requireTgIdInput === 'function' ? window.requireTgIdInput() : null;
+        if (!tgStr) return;
+        const payload = {
+          name: document.getElementById('nrTitle')?.value?.trim() || 'Новый отчёт',
+          query: document.getElementById('nrQuery')?.value?.trim() || '',
+          chart_type: document.querySelector('input[name="nrViz"]:checked')?.value || 'auto',
+          schedule_enabled: !!document.getElementById('nrSchedule')?.checked,
+          freq: document.getElementById('nrFreq')?.value || 'weekly',
+          day: dayPayloadFromNrForm(),
+          time: document.getElementById('nrTime')?.value || '09:00',
+          channel: document.querySelector('.channel-opt.is-active')?.dataset.channel || 'both',
+          telegram_user_id: Number(tgStr),
+          email: document.getElementById('emailInput')?.value || '',
+        };
+        if (!payload.query) return;
+        await fetch('/reports', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        document.getElementById('newReportModal').hidden = true;
+        window.syncRecipientPreview?.();
+        await loadReports();
+      });
+    }
+
+    reportsListEl.addEventListener('click', async (e) => {
+      const menuBtn = e.target.closest('.report__menu-btn');
+      if (!menuBtn) return;
+      const card = menuBtn.closest('.report');
+      const id = Number(card?.dataset.reportId || 0);
+      const rpt = reportsState.find((x) => x.id === id);
+      if (!rpt) return;
+      activeReportId = id;
+      activeReport = rpt;
+      const modal = document.getElementById('reportModal');
+      const titleEl = document.getElementById('reportModalTitle');
+      titleEl.textContent = rpt.name || 'Отчёт';
+      titleEl.setAttribute('contenteditable', 'false');
+      document.getElementById('reportSubscribe').checked = !!rpt.schedule_enabled;
+      document.getElementById('reportFreq').value = rpt.freq || 'weekly';
+      document.getElementById('reportTime').value = rpt.time || '09:00';
+      const rf = rpt.freq || 'weekly';
+      if (rf === 'monthly') {
+        const raw = String(rpt.day ?? '1').replace(/\D/g, '') || '1';
+        const n = Math.min(31, Math.max(1, parseInt(raw, 10) || 1));
+        const domEl = document.getElementById('reportDom');
+        if (domEl) domEl.value = String(n);
+      } else {
+        const wEl = document.getElementById('reportWeekday');
+        if (wEl) wEl.value = weekShortFromDay(rpt.day);
+      }
+      document.getElementById('reportFormat').value =
+        (rpt.format || 'pdf').toLowerCase() === 'png' ? 'PNG (только график)' :
+        (rpt.format || 'pdf').toLowerCase() === 'xlsx' ? 'XLSX (Excel)' :
+        (rpt.format || 'pdf').toLowerCase() === 'csv' ? 'CSV (таблица)' :
+        'PDF (с графиком и SQL)';
+      document.getElementById('schedSettings').style.display = rpt.schedule_enabled ? '' : 'none';
+      syncReportScheduleUI();
+      const tgi = document.getElementById('tgIdInput');
+      if (tgi && rpt.telegram_user_id != null && String(rpt.telegram_user_id).trim() !== '') {
+        tgi.value = String(rpt.telegram_user_id);
+      }
+      modal.hidden = false;
+      window.syncRecipientPreview?.();
+      updateReportNextRunLabel();
+    });
+
+    document.getElementById('reportRenameBtn')?.addEventListener('click', async () => {
+      const titleEl = document.getElementById('reportModalTitle');
+      if (!titleEl) return;
+      titleEl.setAttribute('contenteditable', 'true');
+      titleEl.focus();
+      const range = document.createRange();
+      range.selectNodeContents(titleEl);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    });
+
+    document.getElementById('reportModalTitle')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.target.blur();
+      }
+    });
+
+    document.getElementById('reportDuplicateBtn')?.addEventListener('click', async () => {
+      if (!activeReport) return;
+      const tgStr =
+        activeReport.telegram_user_id != null
+          ? String(activeReport.telegram_user_id)
+          : (typeof window.requireTgIdInput === 'function' ? window.requireTgIdInput() : null);
+      if (!tgStr) return;
+      const payload = {
+        name: `${activeReport.name} (копия)`,
+        query: activeReport.query || '',
+        sql: activeReport.sql || null,
+        chart_type: activeReport.chart_type || 'auto',
+        schedule_enabled: !!activeReport.schedule_enabled,
+        freq: activeReport.freq || 'weekly',
+        day: activeReport.day || null,
+        time: activeReport.time || '09:00',
+        channel: activeReport.channel || 'both',
+        telegram_user_id: Number(tgStr),
+        email: activeReport.email || '',
+        format: activeReport.format || 'pdf',
+      };
+      await fetch('/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      notify('Отчёт продублирован', 'success');
+      document.getElementById('reportModal').hidden = true;
+      await loadReports();
+    });
+
+    document.getElementById('reportDownloadBtn')?.addEventListener('click', async () => {
+      if (!activeReport) return;
+      try {
+        const r = await fetch('/ask?query=' + encodeURIComponent(activeReport.query || ''));
+        const j = await r.json();
+        if (j.status !== 'ok') throw new Error(j.error || 'Не удалось сформировать данные');
+        currentData = j;
+        currentChartType = activeReport.chart_type || j.recommended_chart || 'bar';
+        renderCanvasBI(j);
+        doExport((activeReport.format || 'pdf').toLowerCase());
+        notify('Отчёт выгружен', 'success');
+      } catch (e) {
+        notify('Не удалось скачать отчёт', 'error');
+      }
+    });
+
+    document.querySelector('#reportModal .btn.btn--primary[data-close]')?.addEventListener('click', async () => {
+      if (!activeReportId) return;
+      const tgStr = typeof window.requireTgIdInput === 'function' ? window.requireTgIdInput() : null;
+      if (!tgStr) return;
+      const formatLabel = document.getElementById('reportFormat').value || 'PDF (с графиком и SQL)';
+      const format = formatLabel.startsWith('PNG') ? 'png' : formatLabel.startsWith('XLSX') ? 'xlsx' : formatLabel.startsWith('CSV') ? 'csv' : 'pdf';
+      const reportName = document.getElementById('reportModalTitle')?.textContent?.trim();
+      await fetch(`/reports/${activeReportId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...(reportName ? { name: reportName } : {}),
+          schedule_enabled: document.getElementById('reportSubscribe').checked ? 1 : 0,
+          freq: document.getElementById('reportFreq').value,
+          day: dayPayloadFromReportForm(),
+          time: document.getElementById('reportTime').value,
+          telegram_user_id: Number(tgStr),
+          format: format,
+        }),
+      });
+      if (reportName) document.getElementById('reportModalTitle').textContent = reportName;
+      document.getElementById('reportModalTitle').setAttribute('contenteditable', 'false');
+      notify('Отчёт сохранён', 'success');
+      await loadReports();
+    });
+
+    const delBtn = document.querySelector('#reportModal .menu-item--danger');
+    if (delBtn) {
+      delBtn.addEventListener('click', async () => {
+        if (!activeReportId) return;
+        await fetch(`/reports/${activeReportId}`, { method: 'DELETE' });
+        document.getElementById('reportModal').hidden = true;
+        await loadReports();
+      });
+    }
+
+    document.getElementById('newReportBtn')?.addEventListener('click', () => openNewReportModal());
+
+    document.getElementById('nrFreq')?.addEventListener('change', syncNrScheduleUI);
+    document.getElementById('reportFreq')?.addEventListener('change', syncReportScheduleUI);
+
+    document.getElementById('nrSchedule')?.addEventListener('change', updateNrNextRunLabel);
+    document.getElementById('nrTime')?.addEventListener('input', updateNrNextRunLabel);
+    document.getElementById('nrTime')?.addEventListener('change', updateNrNextRunLabel);
+    ['nrWeekday', 'nrDom'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', updateNrNextRunLabel);
+      el.addEventListener('change', updateNrNextRunLabel);
+    });
+
+    ['reportTime', 'reportWeekday', 'reportDom'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', updateReportNextRunLabel);
+      el.addEventListener('change', updateReportNextRunLabel);
+    });
+
+    const oldPing = window.pingHealth;
+    window.pingHealth = async function () {
+      await (oldPing ? oldPing() : Promise.resolve());
+      try {
+        const r = await fetch('/health');
+        const j = await r.json();
+        const ok = !!j.db?.ok;
+        document.querySelectorAll('.status .status__dot').forEach((dot) => {
+          dot.style.background = ok ? '#96ea28' : '#c00';
+          dot.style.boxShadow = ok ? '0 0 0 3px rgba(150,234,40,0.2)' : '0 0 0 3px rgba(204,0,0,0.25)';
+        });
+      } catch {}
+    };
+    window.pingHealth();
+    loadReports();
+  })();
+</script>
+
+<div id="toastHost" class="toast-host" aria-live="polite" aria-atomic="true"></div>
 
 </body>
 </html>

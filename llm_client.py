@@ -1,4 +1,4 @@
-"""Клиент LM Studio для SQLCoder-8b."""
+"""HTTP-клиент к LM Studio: промпт, разбор ответа, транспиляция в MariaDB."""
 from __future__ import annotations
 
 import re
@@ -19,7 +19,7 @@ from semantic_layer import semantic
 
 
 class LLMError(RuntimeError):
-    pass
+    """LLM недоступна или вернула невалидный ответ."""
 
 
 @dataclass
@@ -43,11 +43,17 @@ def _schema_ddl() -> str:
             ORDER BY ORDINAL_POSITION
         """), {"db": DB_NAME}).fetchall()
     lines = ["CREATE TABLE orders ("]
+    if not rows:
+        lines.append("    -- no columns discovered")
+        lines.append(");")
+        return "\n".join(lines)
+
     for name, dtype, nullable, comment in rows:
         nn = "" if nullable == "YES" else " NOT NULL"
         cm = f"  -- {comment}" if comment else ""
-        lines.append(f"    {name} {dtype.upper()}{nn},{cm}")
-    lines[-1] = lines[-1].rstrip(",") + (cm if lines[-1].endswith(cm) else "")
+        lines.append(f"    {name} {dtype.upper()}{nn},{cm}".rstrip(","))
+
+    lines[-1] = lines[-1].rstrip(",")
     lines.append(");")
     return "\n".join(lines)
 
@@ -133,18 +139,21 @@ def extract_sql(raw: str) -> str:
     return candidate
 
 
-# sqlglot postgres→mysql иногда выдаёт `INTERVAL (INTERVAL '6' MONTH) DAY`
-# и/или кавычит число: `INTERVAL '6' MONTH`. MariaDB это не переваривает.
 _NESTED_INTERVAL_RE = re.compile(
     r"INTERVAL\s*\(\s*INTERVAL\s+'?(\d+)'?\s+(\w+)\s*\)\s*\w+",
     re.IGNORECASE,
 )
 _INTERVAL_QUOTED_RE = re.compile(r"INTERVAL\s+'(\d+)'\s+(\w+)", re.IGNORECASE)
+_ORDER_BY_NULLS_ALIAS_RE = re.compile(
+    r"ORDER\s+BY\s+CASE\s+WHEN\s+([A-Za-z_][A-Za-z0-9_]*)\s+IS\s+NULL\s+THEN\s+1\s+ELSE\s+0\s+END\s+DESC\s*,\s*\1\s+DESC",
+    re.IGNORECASE,
+)
 
 
 def _fix_mariadb_quirks(sql: str) -> str:
     sql = _NESTED_INTERVAL_RE.sub(r"INTERVAL \1 \2", sql)
     sql = _INTERVAL_QUOTED_RE.sub(r"INTERVAL \1 \2", sql)
+    sql = _ORDER_BY_NULLS_ALIAS_RE.sub(r"ORDER BY \1 DESC", sql)
     return sql
 
 
@@ -194,12 +203,10 @@ def generate_sql(question: str) -> LLMResult:
     except (KeyError, IndexError) as e:
         raise LLMError(f"Некорректная форма ответа: {e}")
 
-    # Пытаемся распарсить JSON из ответа модели
     explanation = None
     logic_path = None
     stats_template = None
-    
-    # Пробуем найти JSON в ответе (может быть обёрнут в code blocks)
+
     json_match = re.search(r'\{[\s\S]*\}', content)
     if json_match:
         try:
@@ -227,6 +234,7 @@ def generate_sql(question: str) -> LLMResult:
 
 
 def healthcheck() -> dict:
+    """Быстрая проверка доступности LM Studio — для /health эндпоинта."""
     try:
         with _client() as c:
             r = c.get("/models", timeout=3)

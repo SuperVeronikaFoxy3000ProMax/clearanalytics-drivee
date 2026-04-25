@@ -7,6 +7,12 @@ sqlalchemy
 pymysql
 pandas
 plotly
+kaleido
+openpyxl
+reportlab
 tqdm
 requests
 streamlit
+aiogram>=3.0
+apscheduler>=3.10
+python-dotenv>=1.0

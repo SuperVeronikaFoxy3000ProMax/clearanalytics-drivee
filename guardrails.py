@@ -1,4 +1,4 @@
-"""SQL-Guardrails."""
+"""Проверка SQL: sqlglot AST + sqlparse, whitelist таблиц, принудительный LIMIT."""
 from __future__ import annotations
 
 import re
@@ -22,6 +22,7 @@ FORBIDDEN_EXPR_TYPES = (
 
 
 class GuardrailError(ValueError):
+    """Запрос не прошёл проверку безопасности."""
     def __init__(self, reason: str, code: str = "guardrail_blocked"):
         super().__init__(reason)
         self.reason = reason
@@ -30,6 +31,7 @@ class GuardrailError(ValueError):
 
 @dataclass
 class GuardrailReport:
+    """Результат проверки: безопасный SQL + метаданные сложности для диспетчера."""
     sql: str
     tables: list[str]
     has_join: bool
@@ -43,18 +45,22 @@ class GuardrailReport:
 def validate(sql: str) -> GuardrailReport:
     if not sql or not sql.strip():
         raise GuardrailError("Пустой SQL")
+
     statements = [s for s in sqlparse.parse(sql) if s.tokens and str(s).strip()]
     if len(statements) != 1:
         raise GuardrailError(
             f"Разрешено только одно SQL-выражение, получено: {len(statements)}"
         )
+
     try:
         tree = sqlglot.parse_one(sql, read="mysql")
     except Exception as e:
         raise GuardrailError(f"SQL не распарсился: {e}", code="parse_error")
+
     root_select = tree if isinstance(tree, exp.Select) else tree.find(exp.Select)
     if not isinstance(tree, (exp.Select, exp.Subquery, exp.With)) or root_select is None:
         raise GuardrailError(f"Ожидался SELECT, получен {type(tree).__name__}")
+
     for node in tree.walk():
         n = node[0] if isinstance(node, tuple) else node
         if isinstance(n, FORBIDDEN_EXPR_TYPES):
@@ -62,6 +68,7 @@ def validate(sql: str) -> GuardrailReport:
                 f"Запрещённая операция: {type(n).__name__}",
                 code="dml_ddl_blocked",
             )
+
     table_nodes = list(tree.find_all(exp.Table))
     tables = []
     for t in table_nodes:
@@ -74,6 +81,7 @@ def validate(sql: str) -> GuardrailReport:
             )
     if not tables:
         raise GuardrailError("Нет FROM-таблицы в запросе", code="no_from")
+
     has_join = any(True for _ in tree.find_all(exp.Join))
     has_subquery = any(sq for sq in tree.find_all(exp.Subquery) if sq is not tree)
     has_cte = bool(tree.find(exp.With))
@@ -82,16 +90,15 @@ def validate(sql: str) -> GuardrailReport:
     ))
 
     complexity = _score_complexity(has_join, has_subquery, has_cte, len(tables))
+
     had_limit = root_select.args.get("limit") is not None
     if not had_limit:
         root_select.set("limit", exp.Limit(
             expression=exp.Literal.number(FORCED_LIMIT)
         ))
 
-    # Нормализованный SQL обратно в строку (single line через pretty=False)
     normalized = tree.sql(dialect="mysql")
 
-    # Дополнительная страховка: ';' внутри не должно быть
     if normalized.strip().rstrip(";").count(";") > 0:
         raise GuardrailError("Несколько выражений через ';' запрещены")
 
@@ -120,13 +127,10 @@ def _score_complexity(join: bool, subquery: bool, cte: bool, n_tables: int) -> i
     return min(2, score)
 
 
-# --- эвристика «плохой» оптимизации ---
-# (не блокирует, но добавляет warning в план)
 _SELECT_STAR_RE = re.compile(r"select\s+\*", re.IGNORECASE)
 
 
 def performance_warnings(sql: str) -> list[str]:
-    """Возвращает список советов по оптимизации. Не блокирует выполнение."""
     warns: list[str] = []
     low = sql.lower()
     if _SELECT_STAR_RE.search(low):

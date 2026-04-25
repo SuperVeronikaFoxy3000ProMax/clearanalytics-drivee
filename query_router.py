@@ -1,4 +1,4 @@
-"""Детерминированный rule-router NL → SQL."""
+"""Rule-router: SQL из семантики (metric, dimension, period, top_n), без подстановки сырого текста в SQL."""
 from __future__ import annotations
 
 import re
@@ -23,9 +23,11 @@ _PERIOD_PATTERNS = [
     (re.compile(r"прошл\w*\s+год"), "YEAR(order_timestamp) = YEAR(CURDATE()) - 1", "прошлый год"),
     (re.compile(r"(за|в)\s+год|этот\s+год|текущ\w*\s+год"), "YEAR(order_timestamp) = YEAR(CURDATE())", "текущий год"),
 ]
+
 _N_MONTHS_RE = re.compile(r"(?:за|на|последн\w*)\s+(\d{1,2})\s+месяц")
 _N_WEEKS_RE = re.compile(r"(?:за|на|последн\w*)\s+(\d{1,2})\s+недел")
 _N_DAYS_RE = re.compile(r"(?:за|на|последн\w*)\s+(\d{1,3})\s+(?:дн|ден)")
+
 _AVG_REQUEST_RE = re.compile(r"\b(в\s+среднем|средн\w*\s+(?:количеств|число|знач))")
 
 _MONTH_MAP = {
@@ -81,6 +83,13 @@ class RuleRouter:
 
         period_sql, period_label = self._detect_period(query)
         top_n = self._detect_top_n(query)
+        low_q = query.lower()
+
+        explicit_month_breakdown = bool(
+            re.search(r"по\s+месяц|помесяч|помесячн|ежемесяч", low_q)
+        )
+        if period_label and "месяц" in period_label and not explicit_month_breakdown:
+            dimensions = [d for d in dimensions if not self._is_month_dim(d)]
 
         if (
             _AVG_REQUEST_RE.search(query.lower())
@@ -112,6 +121,12 @@ class RuleRouter:
 
         reason = self._reason(plan, sql)
         return RouterResult(sql=sql, confidence=confidence, plan=plan, reason=reason)
+
+    @staticmethod
+    def _is_month_dim(term: Term) -> bool:
+        col = (term.column_expr or "").lower()
+        t = (term.term or "").lower()
+        return "month(" in col or "month" in col or "месяц" in t
 
     def _detect_period(self, query: str) -> tuple[Optional[str], Optional[str]]:
         q = query.lower()
@@ -190,7 +205,6 @@ class RuleRouter:
         if group_parts:
             sql += "\nGROUP BY " + ", ".join(group_parts)
 
-        # сортировка
         order_col = self._choose_order(plan, agg_alias)
         if order_col:
             sql += f"\nORDER BY {order_col}"
@@ -200,7 +214,6 @@ class RuleRouter:
         return sql
 
     def _choose_order(self, plan: QueryPlan, agg_alias: Optional[str]) -> Optional[str]:
-        # временной ряд — по возрастанию даты
         for dim in plan.dimensions:
             if "order_timestamp" in dim.column_expr:
                 return self._alias_for(dim.column_expr) + " ASC"
@@ -210,8 +223,6 @@ class RuleRouter:
 
     @staticmethod
     def _alias_for(column_expr: str) -> str:
-        # "DATE(order_timestamp)" → "date"; "city_id" → "city_id"
-        # "DATE_FORMAT(order_timestamp, '%Y-%m')" → "month"
         if "DATE_FORMAT" in column_expr.upper():
             fmt = re.search(r"'([^']+)'", column_expr)
             if fmt and "%m" in fmt.group(1) and "%d" not in fmt.group(1):
@@ -229,7 +240,6 @@ class RuleRouter:
 
     @staticmethod
     def _period_spans_months(label: Optional[str]) -> bool:
-        """Период покрывает > 1 месяца — имеет смысл разбивать помесячно."""
         if not label:
             return False
         l = label.lower()
@@ -244,14 +254,12 @@ class RuleRouter:
     def _metric_alias(metric: Term) -> str:
         agg = (metric.agg or "").upper()
         if agg.startswith("COUNT"):
-            return metric.term.split()[0]  # «отмены»/«поездки» → alias
+            return metric.term.split()[0]
         if agg.startswith("SUM"):
             return "total"
         if agg.startswith("AVG"):
             return "avg_value"
         return "value"
-
-    # --- confidence / reason / explain ---
 
     def _score(self, query: str, plan: QueryPlan, sql: Optional[str]) -> float:
         if sql is None:
@@ -265,16 +273,14 @@ class RuleRouter:
             score += 0.15
         if plan.top_n:
             score += 0.10
-        
-        # Штраф за сложные запросы, которые rule-based не обработает хорошо
+
         complexity_signals = ["сравни", "относительно", "по сравнению", "процент", "доля",
                               "медиан", "рост", "падение", "динамика", "как меняет"]
         for w in complexity_signals:
             if w in query.lower():
-                score -= 0.25  # сильный штраф → упадёт ниже 0.7 → пойдёт в LLM
+                score -= 0.25
                 break
-        
-        # Штраф за «шум» — слова, не связанные ни с какой подсистемой
+
         noise_signals = ["сравни", "относительно", "по сравнению", "процент", "доля",
                          "медиан", "рост", "падение"]
         for w in noise_signals:

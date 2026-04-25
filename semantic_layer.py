@@ -1,4 +1,4 @@
-"""Динамический семантический слой."""
+"""Семантический слой: SQLite + кэш, валидация колонок по INFORMATION_SCHEMA."""
 from __future__ import annotations
 
 import json
@@ -34,7 +34,7 @@ class Term:
     column_expr: str
     agg: Optional[str] = None
     filter_sql: Optional[str] = None
-    synonyms: list[str] = None
+    synonyms: list[str] = None  # type: ignore
     is_user_added: bool = False
     id: Optional[int] = None
     created_at: Optional[str] = None
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS term_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     term_id INTEGER,
     term TEXT NOT NULL,
-    action TEXT NOT NULL,       -- add|update|delete|synonym_add
+    action TEXT NOT NULL,
     payload_json TEXT,
     actor TEXT DEFAULT 'system',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -149,13 +149,12 @@ _SEED: list[Term] = [
 
 
 class DynamicSemanticLayer:
-
     def __init__(self, db_path: Path = DB_PATH) -> None:
         self.db_path = db_path
         self._lock = threading.RLock()
         self._cache_by_term: dict[str, Term] = {}
         self._cache_by_synonym: dict[str, Term] = {}
-        self._schema_columns: set[str] = set()  # имена колонок таблицы orders
+        self._schema_columns: set[str] = set()
         self._init_db()
         self._load_schema_columns()
         self._seed_if_empty()
@@ -223,6 +222,10 @@ class DynamicSemanticLayer:
         )
 
     def validate_column_expr(self, expr: str) -> tuple[bool, str]:
+        """Ищем имена, которые похожи на колонки, и проверяем по INFO_SCHEMA.
+        Не полный парсинг SQL — этого достаточно для нашего узкого формата
+        `col` | `FUNC(col)` | `FUNC(col_a, col_b)`.
+        """
         if not self._schema_columns:
             return True, "schema unknown, skipping strict check"
         import re
@@ -236,11 +239,16 @@ class DynamicSemanticLayer:
         return True, "ok"
 
     def get(self, text_in: str) -> Optional[Term]:
+        """Поиск по основному термину ИЛИ синониму (case-insensitive)."""
         key = text_in.strip().lower()
         with self._lock:
             return self._cache_by_term.get(key) or self._cache_by_synonym.get(key)
 
     def find_in_query(self, query: str) -> list[Term]:
+        """Все термины, упомянутые в запросе. Сверяем токены запроса со
+        стеммированными префиксами ключей — чтобы ловить падежи ('выручку',
+        'поездку', 'отменено', 'водителей').
+        """
         import re
         q_tokens = re.findall(r"[а-яёa-z0-9]+", query.lower())
         found: dict[int, Term] = {}
@@ -254,6 +262,10 @@ class DynamicSemanticLayer:
 
     @staticmethod
     def _key_matches_tokens(key: str, tokens: list[str]) -> bool:
+        """Многословный ключ требует, чтобы все его слова нашлись (стем-префикс);
+        односложный — совпадение по общему префиксу длины `min(len, len_tok)-2`,
+        но не короче 3 символов.
+        """
         parts = key.split()
         for p in parts:
             stem_len = max(3, len(p) - 2)
@@ -298,6 +310,7 @@ class DynamicSemanticLayer:
         return self.get(term)  # type: ignore[return-value]
 
     def add_synonym(self, term: str, synonym: str, actor: str = "auto") -> bool:
+        """1-click-подтверждённое добавление синонима к существующему термину."""
         t = self.get(term)
         if not t:
             return False
@@ -313,6 +326,28 @@ class DynamicSemanticLayer:
             c.execute(
                 "INSERT INTO term_history(term_id,term,action,payload_json,actor) VALUES(?,?,?,?,?)",
                 (t.id, t.term, "synonym_add",
+                 json.dumps({"synonym": synonym}, ensure_ascii=False), actor),
+            )
+        self._rebuild_cache()
+        return True
+
+    def remove_synonym(self, term: str, synonym: str, actor: str = "user") -> bool:
+        """Удаляет синоним у термина (case-insensitive)."""
+        t = self.get(term)
+        if not t:
+            return False
+        original = t.synonyms or []
+        kept = [s for s in original if s.lower() != synonym.lower()]
+        if len(kept) == len(original):
+            return False
+        with self._lock, self._conn() as c:
+            c.execute(
+                "UPDATE terms SET synonyms_json=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                (json.dumps(kept, ensure_ascii=False), t.id),
+            )
+            c.execute(
+                "INSERT INTO term_history(term_id,term,action,payload_json,actor) VALUES(?,?,?,?,?)",
+                (t.id, t.term, "synonym_delete",
                  json.dumps({"synonym": synonym}, ensure_ascii=False), actor),
             )
         self._rebuild_cache()
