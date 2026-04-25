@@ -1,67 +1,74 @@
-# InstantData (a211)
+# Умный Аналитик 
 
-Веб-интерфейс на **FastAPI** + статический фронт (`app.html` / `app.css`), NL→SQL через rule-based роутер и локальную LLM (**LM Studio**, OpenAI-совместимый API), семантический слой в **SQLite**, данные заказов в **MariaDB/MySQL**. Опционально: **Telegram-бот** и рассылка отчётов по расписанию.
+Веб-приложение для аналитики на естественном языке:
 
-## Что нужно заранее
+- frontend: `app.html` + `app.css`;
+- backend: `FastAPI` (`api.py`);
+- NL2SQL: rule-based логика + LLM (OpenAI-compatible endpoint, например LM Studio);
+- БД терминов и отчетов: локальные `SQLite` файлы;
+- отправка отчетов в Telegram через `telegram_bot.py`.
 
-- **Python** 3.10+ (рекомендуется 3.11).
-- **MariaDB или MySQL** с базой `drivee` и таблицей `orders` (см. `config.py`: хост, порт, имя БД).
-- Пользователь **read-only** для запросов аналитики (в `config.py` заданы `RO_USER` / `RO_PASSWORD`; при необходимости поправьте пароль и права `GRANT SELECT`).
-- Для LLM-ветки: **LM Studio** (или аналог) с моделью, URL и имя модели — в `config.py` (`LLM_BASE_URL`, `LLM_MODEL`).
-- Для Telegram: токен бота от [@BotFather](https://t.me/BotFather).
+## Требования
 
-## Установка
+- Python 3.11 (рекомендуется).
+- MySQL/MariaDB с доступной базой `drivee`.
+- Пользователь с правами `SELECT` для аналитических запросов.
+- (Опционально) LLM endpoint OpenAI-compatible.
+- (Опционально) Telegram bot token от [@BotFather](https://t.me/BotFather).
 
-Из корня репозитория:
+## Быстрый старт (локально)
+
+### Windows (PowerShell)
 
 ```powershell
-cd путь\к\clearanalytics-drivee
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+copy .env.example .env
 ```
 
-На Linux/macOS:
+### Linux/macOS
 
 ```bash
-cd /path/to/clearanalytics-drivee
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env
 ```
 
-## Конфигурация
+Запуск API:
 
-1. **`config.py`** — подключение к MySQL (`DB_HOST`, `DB_PORT`, `DB_NAME`, `RO_USER` / `RO_PASSWORD`, при необходимости `ADMIN_USER` / `ADMIN_PASSWORD` для валидации словаря по `INFORMATION_SCHEMA`), таймауты и параметры LM Studio.
+```bash
+uvicorn api:app --reload --host 127.0.0.1 --port 8000
+```
 
-2. **Переменные окружения** — скопируйте `.env.example` в `.env` и заполните как минимум токен бота (если используете Telegram):
+Открыть UI: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
 
-   ```text
-   TELEGRAM_BOT_TOKEN=ваш_токен
-   ```
+Запуск Telegram-бота (во втором терминале):
 
+```bash
+python telegram_bot.py
+```
 
-При первом запуске API создаются локальные файлы **`semantic_layer.db`** (словарь терминов) и **`reports.db`** (отчёты и привязки Telegram), если их ещё нет.
+## Быстрый старт (Docker)
 
-## Запуск через Docker (API + Telegram-бот)
+### 1) Подготовка `.env`
 
-### 1) Подготовьте `.env`
-
-Скопируйте `.env.example` в `.env` и заполните:
+**Переменные окружения** — скопируйте `.env.example` в `.env` и заполните как минимум токен бота (если используете Telegram):
 
 ```text
 TELEGRAM_BOT_TOKEN=ваш_токен
 ```
 
-### 2) Сборка и запуск
+### 2) Запуск
 
 ```bash
 docker compose up --build -d
 ```
 
-Откройте UI: **http://127.0.0.1:8000/**
+UI: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
 
-### 3) Логи сервисов
+### 3) Логи
 
 ```bash
 docker compose logs -f app
@@ -74,41 +81,48 @@ docker compose logs -f bot
 docker compose down
 ```
 
-## Запуск веб-приложения
+## Конфигурация
 
-```powershell
-.\venv\Scripts\Activate.ps1
-uvicorn api:app --reload --host 127.0.0.1 --port 8000
-```
+Проект читает настройки из переменных окружения:
 
-Откройте в браузере: **http://127.0.0.1:8000/**
+- `DB_HOST`, `DB_PORT`, `DB_NAME`
+- `RO_USER`, `RO_PASSWORD`
+- `ADMIN_USER`, `ADMIN_PASSWORD`
+- `QUERY_TIMEOUT_SEC`, `FORCED_LIMIT`
+- `LLM_BASE_URL`, `LLM_MODEL`, `LLM_TIMEOUT_SEC`, `LLM_MAX_TOKENS`, `LLM_TEMPERATURE`
+- `TELEGRAM_BOT_TOKEN`
 
-## Запуск Telegram-бота (отдельный процесс)
+Файл `project_env.py` загружает:
 
-Бот сохраняет `chat_id` в ту же **`reports.db`**, что и API (после `/start` в настройках веб-интерфейса можно указать Telegram ID для рассылки).
+1. `.env`
+2. `.env.telegram` - опиционально 
 
-```powershell
-.\venv\Scripts\Activate.ps1
-python telegram_bot.py
-```
+## Основные эндпоинты
 
-Оставьте процесс запущенным (polling). API и бот могут работать параллельно в двух терминалах.
+- `GET /` — UI (`app.html`)
+- `GET /health` — healthcheck API/БД
+- `POST /ask` — обработка запроса пользователя и ответ с SQL/данными
+- `GET /app.css` — стили
 
-## Полезные пути
+## Локальные базы проекта
 
-| Путь | Назначение |
-|------|------------|
-| `GET /health` | Проверка доступности API и БД |
-| `/` | Главная страница (`app.html`) |
-| `/app.css` | Стили |
+При первом запуске создаются:
 
-## Дополнительно (по необходимости)
+- `semantic_layer.db` — словарь терминов;
+- `reports.db` — сохраненные отчеты, расписания, привязка Telegram ID/chat_id.
 
-- **`seed_db.py`** — пересоздать `semantic_layer.db` с полным начальным набором терминов (запуск вручную, когда нужен «чистый» словарь).
-- **`download_db.py`** — утилита для поднятия схемы `drivee` / `orders` и загрузки данных из CSV (если вы разворачиваете БД с нуля).
+## Полезные скрипты
 
-## Устранение неполадок
+- `seed_db.py` — пересоздание начального словаря терминов.
+- `download_db.py` — подготовка/загрузка данных в `drivee` (если разворачиваете с нуля).
+- `seed_tuples.py` — заполнение тестовыми значениями.
 
-- **Бэкенд недоступен в UI** — убедитесь, что `uvicorn` запущен и страница открыта с того же хоста/порта, что и API (по умолчанию `127.0.0.1:8000`).
-- **Ошибки MySQL** — проверьте `config.py`, что сервер запущен, база `drivee` существует, у read-only пользователя есть `SELECT` на нужные таблицы.
-- **LLM не отвечает** — проверьте, что LM Studio слушает `LLM_BASE_URL` и загружена модель с именем, совпадающим с `LLM_MODEL`.
+## Типовые проблемы
+
+- **UI не открывается**: проверьте, что `uvicorn` запущен на `127.0.0.1:8000`.
+- **Ошибка подключения к БД**: проверьте `DB_HOST/PORT/NAME` и учетные данные.
+- **LLM не отвечает**: проверьте `LLM_BASE_URL` и `LLM_MODEL`.
+- **Telegram-бот не стартует**: проверьте `TELEGRAM_BOT_TOKEN`.
+- **PNG в Telegram не формируется в Docker**: пересоберите контейнеры (`docker compose up --build -d`) после обновления `Dockerfile`.
+
+
