@@ -1137,14 +1137,19 @@
     if (data.warnings && data.warnings.length) {
       cards += `<div class="card"><div class="card__head"><span class="card__label">Предупреждения</span></div><div class="interp">${data.warnings.map(w=>`<div class="interp__row"><span class="interp__val">⚠︎ ${escapeHtml(w)}</span></div>`).join('')}</div></div>`;
     }
-    const resolvedTerm = data?.understanding?.resolved_term;
+    const resolvedTermRaw = data?.understanding?.resolved_term;
     const synonymSource =
       pendingUnknownPhrase ||
       ((status === 'ok' && typeof data.confidence === 'number' && data.confidence < 0.7) ? (data.query || '') : '');
     const synonymCandidate = extractUnknownWord(synonymSource);
+    const resolvedTerm = pickSynonymTarget(data, synonymCandidate, resolvedTermRaw);
+    const candidateAlreadyKnown = isKnownSemanticTokenStrict(synonymCandidate);
+    const candidateAlreadyInTarget = hasSynonymInTerm(resolvedTerm, synonymCandidate);
     const canSuggestSynonym =
       status === 'ok' &&
       !!synonymCandidate &&
+      !candidateAlreadyKnown &&
+      !candidateAlreadyInTarget &&
       typeof resolvedTerm === 'string' &&
       resolvedTerm.trim().length > 0;
     if (canSuggestSynonym) {
@@ -1230,11 +1235,40 @@
     'городам','городу','городе','город','месяц','месяца','месяцев','неделя','недели','день','дней','год','года'
   ]);
 
+  function getSemanticTerms() {
+    return (typeof dictAllTerms !== 'undefined' && dictAllTerms.length) ? dictAllTerms : FULL_SEMANTIC;
+  }
+
+  function normalizeWord(value) {
+    return String(value || '').trim().toLowerCase().replace(/ё/g, 'е');
+  }
+
+  function findTermByName(name) {
+    const n = normalizeWord(name);
+    if (!n) return null;
+    return getSemanticTerms().find((t) => normalizeWord(t.term) === n) || null;
+  }
+
+  function isKnownSemanticTokenStrict(token) {
+    const t = normalizeWord(token);
+    if (!t) return false;
+    for (const item of getSemanticTerms()) {
+      const keys = [item.term, ...(item.synonyms || [])];
+      for (const key of keys) {
+        const k = normalizeWord(key);
+        if (!k) continue;
+        if (k === t) return true;
+        const parts = k.split(/\s+/).filter(Boolean);
+        if (parts.some((p) => p === t)) return true;
+      }
+    }
+    return false;
+  }
+
   function isKnownSemanticToken(token) {
     const t = String(token || '').toLowerCase();
     if (!t) return false;
-    const terms = (typeof dictAllTerms !== 'undefined' && dictAllTerms.length) ? dictAllTerms : FULL_SEMANTIC;
-    for (const item of terms) {
+    for (const item of getSemanticTerms()) {
       const keys = [item.term, ...(item.synonyms || [])].map(x => String(x || '').toLowerCase());
       for (const key of keys) {
         const parts = key.split(/\s+/).filter(Boolean);
@@ -1258,6 +1292,36 @@
       return tok;
     }
     return tokens.find(t => t.length >= 4 && !SYN_STOPWORDS.has(t)) || '';
+  }
+
+  function hasSynonymInTerm(termName, candidate) {
+    const term = findTermByName(termName);
+    if (!term) return false;
+    const c = normalizeWord(candidate);
+    if (!c) return false;
+    const keys = [term.term, ...(term.synonyms || [])].map(normalizeWord);
+    return keys.includes(c);
+  }
+
+  function pickSynonymTarget(data, candidate, fallbackResolvedTerm) {
+    const u = data?.understanding || {};
+    const agg = String(u['агрегация'] || '').toLowerCase();
+    const group = String(u['разрез'] || '').toLowerCase();
+    const filter = String(u['фильтр'] || '').toLowerCase();
+    const cand = normalizeWord(candidate);
+
+    if (agg.includes('sum(price_order_local)')) return 'Выручка';
+    if (agg.includes('avg(price_order_local)')) return 'Средняя цена';
+    if (agg.includes('count') && filter.includes("status_order = 'cancel'")) return 'Отмены';
+    if (agg.includes('count') && filter.includes("status_order = 'done'")) {
+      if (cand.includes('водител') || group.includes('driver_id')) return 'Водитель';
+      return 'Поездки';
+    }
+    if (cand.includes('водител') || group.includes('driver_id')) return 'Водитель';
+    if (cand.includes('город') || group.includes('city')) return 'Город';
+
+    const fallback = String(fallbackResolvedTerm || '').trim();
+    return findTermByName(fallback) ? fallback : '';
   }
 
   function renderCanvasBI(data) {
