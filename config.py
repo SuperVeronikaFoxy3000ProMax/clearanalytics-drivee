@@ -1,9 +1,12 @@
-"""Конфиги БД и таймаутов. Read-only роль для всех NL-запросов."""
+"""App and DB settings."""
 from sqlalchemy import create_engine
 
 DB_HOST = "localhost"
 DB_PORT = 3306
 DB_NAME = "drivee"
+
+DATA_TABLES: tuple[str, ...] = ("incity", "pass_detail", "driver_detail")
+PRIMARY_FACT_TABLE = "incity"
 
 RO_USER = "analyst_ro"
 RO_PASSWORD = ""
@@ -11,7 +14,7 @@ RO_PASSWORD = ""
 ADMIN_USER = "root"
 ADMIN_PASSWORD = ""
 
-QUERY_TIMEOUT_SEC = 10
+QUERY_TIMEOUT_SEC = 90
 FORCED_LIMIT = 1000
 
 # LM Studio exposes OpenAI-compatible API on localhost:1234 by default.
@@ -34,7 +37,6 @@ engine_ro = create_engine(
     connect_args={
         "connect_timeout": 5,
         "read_timeout": QUERY_TIMEOUT_SEC,
-        # MariaDB: max_statement_time в секундах (FLOAT). В MySQL было бы MAX_EXECUTION_TIME в мс.
         "init_command": f"SET SESSION max_statement_time={QUERY_TIMEOUT_SEC}",
     },
 )

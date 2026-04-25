@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>InstantData — SQL IDE для non-tech аудитории</title>
+<title>Умный Аналитик — SQL IDE для non-tech аудитории</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -78,7 +78,7 @@
           <span class="status__dot"></span>
           БД · подключена
         </div>
-        <button class="btn btn--ghost">
+        <button class="btn btn--ghost" id="helpBtn" type="button">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
           Помощь
         </button>
@@ -97,7 +97,7 @@
                 <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
               </div>
               <h2>Здесь появится ваш график</h2>
-              <p>Задайте вопрос на русском в чате справа — InstantData сгенерирует SQL, выполнит запрос к базе данных и покажет результат в виде графика и таблицы.</p>
+              <p>Задайте вопрос на русском в чате справа — Умный Аналитик сгенерирует SQL, выполнит запрос к базе данных и покажет результат в виде графика и таблицы.</p>
               <div class="bi-empty__flow">
                 <span class="flow-pill">1 · Вопрос</span><span class="flow-arrow">→</span><span class="flow-pill">2 · SQL</span><span class="flow-arrow">→</span><span class="flow-pill">3 · График</span><span class="flow-arrow">→</span><span class="flow-pill flow-pill--accent">4 · Решение</span>
               </div>
@@ -301,7 +301,6 @@
       </div>
     </div>
 
-    <!-- ============ MODAL: SETTINGS (до <script>, чтобы querySelector и getElementById видели узел) ============ -->
     <div class="modal" id="settingsModal" hidden>
       <div class="modal__backdrop" data-close></div>
       <div class="modal__dialog modal__dialog--wide">
@@ -338,7 +337,6 @@
             </div>
           </div>
 
-          <!-- Куда отправлять отчёты -->
           <div class="settings-sec">
             <div class="settings-sec__title">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -424,7 +422,6 @@
             </div>
           </div>
 
-          <!-- Notifications -->
           <div class="settings-sec">
             <div class="settings-sec__title">Уведомления</div>
             <div class="settings-sec__body">
@@ -447,7 +444,6 @@
             </div>
           </div>
 
-          <!-- Interface -->
           <div class="settings-sec">
             <div class="settings-sec__title">Интерфейс</div>
             <div class="settings-sec__body">
@@ -480,7 +476,212 @@
       </div>
     </div>
 
-    <!-- =============== CHARTS VIEW =============== -->
+    <div class="modal" id="helpModal" hidden>
+      <div class="modal__backdrop" data-close></div>
+      <div class="modal__dialog modal__dialog--wide">
+        <div class="modal__head">
+          <div>
+            <div class="modal__eyebrow">Справка</div>
+            <h3 class="modal__title">Как пользоваться Умным Аналитиком</h3>
+          </div>
+          <button class="icon-btn modal__close" data-close title="Закрыть">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="modal__body">
+
+          <div class="help-tabs" role="tablist">
+            <button class="help-tab is-active" data-help-tab="start" type="button">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Быстрый старт
+            </button>
+            <button class="help-tab" data-help-tab="tips" type="button">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+              Как формулировать
+            </button>
+            <button class="help-tab" data-help-tab="faq" type="button">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Частые вопросы
+            </button>
+          </div>
+
+      <div class="help-panel is-active" data-help-panel="start">
+        <div class="help-hero help-hero--start">
+          <div class="help-hero__ico">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </div>
+          <div class="help-hero__text">
+            <b>Как всё работает за 4 шага</b>
+            <small>Путь от вопроса на русском до готового отчёта с рассылкой.</small>
+          </div>
+        </div>
+        <div class="help-steps">
+          <div class="help-step">
+            <div class="help-step__num">1</div>
+            <div>
+              <b>Задайте вопрос на русском</b>
+              <p>В правой панели чата напишите вопрос обычными словами. Например: «Покажи выручку за этот и прошлый год».</p>
+            </div>
+          </div>
+          <div class="help-step">
+            <div class="help-step__num">2</div>
+            <div>
+              <b>ИИ сгенерирует SQL</b>
+              <p>Вы увидите, как система «поняла» вопрос: метрику, временное поле, группировку. Можно проверить и поправить.</p>
+            </div>
+          </div>
+          <div class="help-step">
+            <div class="help-step__num">3</div>
+            <div>
+              <b>Получите график и таблицу</b>
+              <p>В центре появится визуализация и данные. Тип графика можно переключить прямо в заголовке.</p>
+            </div>
+          </div>
+          <div class="help-step">
+            <div class="help-step__num">4</div>
+            <div>
+              <b>Сохраните и подпишитесь</b>
+              <p>Сохраните отчёт и настройте рассылку — отчёт будет приходить по расписанию в Telegram, на email или туда и туда.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-panel" data-help-panel="tips" hidden>
+        <div class="help-hero help-hero--tips">
+          <div class="help-hero__ico">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+          </div>
+          <div class="help-hero__text">
+            <b>Формулируйте конкретно</b>
+            <small>Укажите метрику, период и группировку — ИИ поймёт с первого раза. Сравните пары «лучше / хуже» ниже.</small>
+          </div>
+        </div>
+        <div class="help-tips-head">
+          <span class="help-tips-head__col help-tips-head__col--good">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Лучше
+          </span>
+          <span class="help-tips-head__col help-tips-head__col--bad">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Хуже
+          </span>
+        </div>
+        <div class="help-tips">
+          <div class="help-tip help-tip--good">
+            <span class="help-tip__mark">✓</span>
+            <div>
+              <small>Лучше</small>
+              <b>«Сравни выручку по городам в марте и апреле 2026»</b>
+            </div>
+          </div>
+          <div class="help-tip help-tip--bad">
+            <span class="help-tip__mark">✗</span>
+            <div>
+              <small>Хуже</small>
+              <b>«дай данные»</b>
+            </div>
+          </div>
+          <div class="help-tip help-tip--good">
+            <span class="help-tip__mark">✓</span>
+            <div>
+              <small>Лучше</small>
+              <b>«Топ-10 водителей по числу завершённых поездок за прошлую неделю»</b>
+            </div>
+          </div>
+          <div class="help-tip help-tip--bad">
+            <span class="help-tip__mark">✗</span>
+            <div>
+              <small>Хуже</small>
+              <b>«кто у нас лучший»</b>
+            </div>
+          </div>
+          <div class="help-tip help-tip--good">
+            <span class="help-tip__mark">✓</span>
+            <div>
+              <small>Лучше</small>
+              <b>«Доля отменённых поездок по дням за апрель 2026, в процентах»</b>
+            </div>
+          </div>
+          <div class="help-tip help-tip--bad">
+            <span class="help-tip__mark">✗</span>
+            <div>
+              <small>Хуже</small>
+              <b>«отмены»</b>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-panel" data-help-panel="faq" hidden>
+        <div class="help-hero help-hero--faq">
+          <div class="help-hero__ico">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="help-hero__text">
+            <b>Частые вопросы</b>
+            <small>Короткие ответы на то, о чём чаще всего спрашивают коллеги.</small>
+          </div>
+        </div>
+        <div class="faq-list">
+          <details class="faq-item" open>
+            <summary>
+              <span>Откуда берётся мой Telegram ID?</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-item__body">
+              Напишите в Telegram боту <b>@userinfobot</b> — он пришлёт число. Это и есть ваш ID. Вставьте его в Настройках → «Куда отправлять отчёты».
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>
+              <span>Что если ИИ неправильно понял вопрос?</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-item__body">
+              Под SQL-запросом есть раздел «Как поняли вопрос» — проверьте метрику и группировку. Если что-то не так, поправьте словарь терминов или переформулируйте вопрос уточнив.
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>
+              <span>Можно ли получать отчёт на email и в Telegram одновременно?</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-item__body">
+              Да. В настройках выберите <b>«Оба канала»</b> — отчёт будет приходить и туда, и туда.
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>
+              <span>В каких форматах приходят отчёты?</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-item__body">
+              PDF (график + SQL + таблица), PNG (только график), XLSX или CSV. Формат выбирается при настройке отчёта.
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>
+              <span>Что такое «Словарь терминов»?</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="faq-item__body">
+              Это бизнес-термины компании (например, «маржа», «активный водитель») с SQL-определениями. ИИ использует их, чтобы правильно понимать ваши вопросы.
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <div class="help-foot">
+        <span>Умный Аналитик v0.9 · build 2026.04.22</span>
+        <span>Кейс Drivee · МПИТ 25/26</span>
+      </div>
+
+        </div>
+      </div>
+    </div>
+
     <section class="view view--charts" data-view="charts">
       <div class="view__scroll">
         <div class="view__inner">
@@ -508,7 +709,6 @@
 
           <div class="reports" id="reportsList">
 
-            <!-- Report card 1 -->
             <article class="report">
               <div class="report__head">
                 <span class="report__type">Столбчатый</span>
@@ -531,7 +731,6 @@
               </div>
             </article>
 
-            <!-- Report 2 -->
             <article class="report">
               <div class="report__head">
                 <span class="report__type">Линейный</span>
@@ -557,7 +756,6 @@
               </div>
             </article>
 
-            <!-- Report 3 -->
             <article class="report">
               <div class="report__head">
                 <span class="report__type">Круговой</span>
@@ -580,7 +778,6 @@
               </div>
             </article>
 
-            <!-- Report 4 -->
             <article class="report">
               <div class="report__head">
                 <span class="report__type">Area</span>
@@ -603,7 +800,6 @@
               </div>
             </article>
 
-            <!-- Report 5 -->
             <article class="report">
               <div class="report__head">
                 <span class="report__type">Таблица</span>
@@ -626,7 +822,6 @@
               </div>
             </article>
 
-            <!-- Report 6 -->
             <article class="report">
               <div class="report__head">
                 <span class="report__type">Столбчатый</span>
@@ -771,8 +966,9 @@
     el.innerHTML = `
       <div class="msg__avatar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
       <div class="msg__content">
-        <div class="msg__head"><span class="msg__name">InstantData</span><span class="confidence">думаю…</span></div>
+        <div class="msg__head"><span class="msg__name">Умный Аналитик</span><span class="confidence">думаю…</span></div>
         <div class="msg__bubble msg__bubble--assistant">⏳ преобразую вопрос в SQL и выполняю запрос…</div>
+        <div class="msg__meta"><span>Сегодня, ${fmtTime()}</span></div>
       </div>`;
     messagesEl.appendChild(el);
     scrollThread();
@@ -968,13 +1164,13 @@
       <div class="msg__avatar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
       <div class="msg__content">
         <div class="msg__head">
-          <span class="msg__name">InstantData</span>
+          <span class="msg__name">Умный Аналитик</span>
           ${routeBadge}
-          <span class="confidence"><span class="confidence__bar"><span style="--w:${pct}%"></span></span>достоверность ${pct}%</span>
-          <span class="msg__time">${fmtTime()}</span>
+          <span class="confidence">достоверность ${pct}%</span>
         </div>
         <div class="msg__bubble msg__bubble--assistant">${bubble}</div>
         ${cards}
+        <div class="msg__meta"><span>Сегодня, ${fmtTime()}</span></div>
       </div>`;
 
     el.querySelectorAll('button.link[data-copy]').forEach(btn => {
@@ -1042,12 +1238,12 @@
       const keys = [item.term, ...(item.synonyms || [])].map(x => String(x || '').toLowerCase());
       for (const key of keys) {
         const parts = key.split(/\s+/).filter(Boolean);
-        for (const p of parts) {
-          if (p.length < 3) continue;
-          const stem = p.slice(0, Math.max(3, p.length - 2));
-          const tStem = t.slice(0, Math.max(3, t.length - 2));
-          if (t.startsWith(stem) || stem.startsWith(tStem)) return true;
-        }
+        if (parts.length > 1) continue;
+        const p = parts[0];
+        if (p.length < 3) continue;
+        const stem = p.slice(0, Math.max(3, p.length - 2));
+        const tStem = t.slice(0, Math.max(3, t.length - 2));
+        if (t.startsWith(stem) || stem.startsWith(tStem)) return true;
       }
     }
     return false;
@@ -1094,7 +1290,7 @@
           <div>
             <div class="bi__eyebrow">Визуализация</div>
             <h2 class="bi__title">${escapeHtml(data.query)}</h2>
-            <div class="bi__sub">${data.rows} строк · ${cols.length} колонок · источник: orders</div>
+            <div class="bi__sub">${data.rows} строк · ${cols.length} колонок · ${(() => { const m = data.sql && String(data.sql).match(/\bFROM\s+(\w+)/i); return 'витрина: ' + (m ? escapeHtml(m[1]) : 'incity'); })()}</div>
           </div>
           <div class="card__actions">
             <div class="select" id="chartSelect">
@@ -1277,14 +1473,59 @@
       return;
     }
 
-    const x = data.data.map(r => r[cols[0]]);
-    const y = data.data.map(r => r[cols[1]]);
     const layoutBase = {
       margin: { t: 16, l: 60, r: 20, b: 60 },
       font: { family: 'Inter, system-ui, sans-serif', size: 12, color: '#2a2f36' },
       plot_bgcolor: '#fff', paper_bgcolor: '#fff',
       showlegend: false,
     };
+
+    if (cols.length >= 3 && (chart === 'bar' || chart === 'line' || chart === 'area')) {
+      const xKey = cols[0], seriesKey = cols[1], yKey = cols[cols.length - 1];
+      const palette = ['#146414','#96ea28','#3d6e0e','#5aa320','#2a4f08','#b4f36c','#7ec41a','#1a7a1a','#c9e89c','#4f8a14','#88d043','#264d06'];
+      const bySeries = new Map();
+      for (const r of data.data) {
+        const s = String(r[seriesKey] ?? '');
+        if (!bySeries.has(s)) bySeries.set(s, { x: [], y: [], name: s });
+        const g = bySeries.get(s);
+        g.x.push(r[xKey]);
+        g.y.push(Number(r[yKey]) || 0);
+      }
+      const traces = Array.from(bySeries.values()).map((g, i) => {
+        const color = palette[i % palette.length];
+        if (chart === 'line') {
+          return { x: g.x, y: g.y, name: g.name, type: 'scatter', mode: 'lines+markers',
+            line: { color, width: 2 }, marker: { size: 7 } };
+        }
+        if (chart === 'area') {
+          return { x: g.x, y: g.y, name: g.name, type: 'bar', marker: { color } };
+        }
+        return { x: g.x, y: g.y, name: g.name, type: 'bar',
+          marker: { color, line: { color: '#146414', width: 0.5 } } };
+      });
+      const layout = {
+        ...layoutBase,
+        showlegend: true,
+        legend: { orientation: 'h', yanchor: 'bottom', y: -0.22, xanchor: 'center', x: 0.5 },
+        xaxis: { title: cols[0], gridcolor: '#eef0f2' },
+        yaxis: { title: yKey, gridcolor: '#eef0f2' },
+        barmode: (chart === 'bar' || chart === 'area') ? 'group' : undefined,
+      };
+      Plotly.newPlot(id, traces, layout, { displayModeBar: false, responsive: true });
+      return;
+    }
+
+    if (chart === 'pie' && cols.length >= 3) {
+      const labels = data.data.map(r => String(r[cols[0]]) + ' · ' + String(r[cols[1]]));
+      const values = data.data.map(r => Number(r[cols[cols.length - 1]]) || 0);
+      const trace = { labels, values, type: 'pie', textinfo: 'label+percent',
+        marker: { colors: ['#146414','#96ea28','#3d6e0e','#5aa320','#2a4f08','#b4f36c','#7ec41a','#1a7a1a','#c9e89c','#4f8a14','#88d043','#264d06'] } };
+      Plotly.newPlot(id, [trace], layoutBase, { displayModeBar: false, responsive: true });
+      return;
+    }
+
+    const x = data.data.map(r => r[cols[0]]);
+    const y = data.data.map(r => r[cols[1]]);
     let trace;
     if (chart === 'line') {
       trace = { x, y, type: 'scatter', mode: 'lines+markers', line: { color: '#146414', width: 3 }, marker: { color: '#96ea28', size: 9 }, name: cols[1] };
@@ -1402,7 +1643,7 @@
     canvasBody.innerHTML = '';
     messagesEl.innerHTML = '';
     canvasEmpty.style.display = 'flex';
-    canvasEmpty.innerHTML = `<div class="bi-empty"><div class="bi-empty__icon"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div><h2>Здесь появится ваш график</h2><p>Задайте вопрос на русском в чате справа — InstantData сгенерирует SQL, выполнит запрос к базе данных и покажет результат в виде графика и таблицы.</p><div class="bi-empty__flow"><span class="flow-pill">1 · Вопрос</span><span class="flow-arrow">→</span><span class="flow-pill">2 · SQL</span><span class="flow-arrow">→</span><span class="flow-pill">3 · График</span><span class="flow-arrow">→</span><span class="flow-pill flow-pill--accent">4 · Решение</span></div></div>`;
+    canvasEmpty.innerHTML = `<div class="bi-empty"><div class="bi-empty__icon"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div><h2>Здесь появится ваш график</h2><p>Задайте вопрос на русском в чате справа — Умный Аналитик сгенерирует SQL, выполнит запрос к базе данных и покажет результат в виде графика и таблицы.</p><div class="bi-empty__flow"><span class="flow-pill">1 · Вопрос</span><span class="flow-arrow">→</span><span class="flow-pill">2 · SQL</span><span class="flow-arrow">→</span><span class="flow-pill">3 · График</span><span class="flow-arrow">→</span><span class="flow-pill flow-pill--accent">4 · Решение</span></div></div>`;
     if (welcomeEl) welcomeEl.style.display = '';
   }
   document.getElementById('newChatBtn').addEventListener('click', () => {
@@ -1429,7 +1670,7 @@
     { term:'Заказ',                  kind:'id',        column_expr:'order_id',                     agg:null, filter_sql:null, synonyms:['заказ','order','поездка'],                            is_user_added:false },
     { term:'Тендер',                 kind:'id',        column_expr:'tender_id',                    agg:null, filter_sql:null, synonyms:['тендер','подбор','аукцион'],                          is_user_added:false },
     { term:'Пользователь (клиент)',  kind:'id',        column_expr:'user_id',                      agg:null, filter_sql:null, synonyms:['клиент','user','пассажир'],                           is_user_added:false },
-    { term:'Водитель',               kind:'id',        column_expr:'driver_id',                    agg:null, filter_sql:null, synonyms:['водитель','driver','исполнитель'],                    is_user_added:false },
+    { term:'Водитель',               kind:'id',        column_expr:'driver_id',                    agg:null, filter_sql:null, synonyms:['водитель','водители','водителей','driver','drivers','исполнитель'], is_user_added:false },
     { term:'Статус заказа',          kind:'status',    column_expr:'status_order',                 agg:null, filter_sql:null, synonyms:['статус','отмена','выполнен','cancelled','completed'], is_user_added:false },
     { term:'Статус тендера',         kind:'status',    column_expr:'status_tender',                agg:null, filter_sql:null, synonyms:['подбор','тендер','auction'],                          is_user_added:false },
     { term:'Создание заказа',        kind:'time',      column_expr:'order_timestamp',              agg:null, filter_sql:null, synonyms:['создан','заказан','created_at'],                      is_user_added:false },
@@ -1497,6 +1738,30 @@
   const closeModal = (m) => { m.hidden = true;  document.body.style.overflow = ''; window.syncRecipientPreview?.(); };
   document.querySelectorAll('.modal [data-close]').forEach(el => el.addEventListener('click', () => closeModal(el.closest('.modal'))));
   document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal').forEach(m => { if (!m.hidden) closeModal(m); }); });
+
+  const helpModal = document.getElementById('helpModal');
+  document.getElementById('helpBtn')?.addEventListener('click', () => {
+    if (helpModal) {
+      helpModal.querySelectorAll('.help-tab').forEach((x, i) => x.classList.toggle('is-active', i === 0));
+      helpModal.querySelectorAll('.help-panel').forEach((p) => {
+        const start = p.dataset.helpPanel === 'start';
+        p.classList.toggle('is-active', start);
+        p.hidden = !start;
+      });
+      openModal(helpModal);
+    }
+  });
+  helpModal?.querySelectorAll('.help-tab').forEach((t) => {
+    t.addEventListener('click', () => {
+      const id = t.dataset.helpTab;
+      helpModal.querySelectorAll('.help-tab').forEach((x) => x.classList.toggle('is-active', x === t));
+      helpModal.querySelectorAll('.help-panel').forEach((p) => {
+        const match = p.dataset.helpPanel === id;
+        p.classList.toggle('is-active', match);
+        p.hidden = !match;
+      });
+    });
+  });
 
   function kindBadge(kind) {
     return `<span class="term__kind term__kind--${KIND_CSS[kind]||'dim'}">${escapeHtml(KIND_LABELS[kind]||kind)}</span>`;
@@ -1965,7 +2230,6 @@
   })();
 </script>
 
-<!-- MODAL: Новый отчёт (wizard) -->
 <div class="modal" id="newReportModal" hidden>
   <div class="modal__backdrop" data-close></div>
   <div class="modal__dialog modal__dialog--wide">
@@ -1994,7 +2258,7 @@
             <input type="text" id="nrTitle" placeholder="например: Выручка по городам · неделя"/></div>
           <div class="field"><label>Вопрос к базе данных</label>
             <textarea id="nrQuery" rows="3" placeholder="например: Покажи выручку по городам за последние 7 дней"></textarea>
-            <div class="field__hint">InstantData преобразует его в SQL и выполнит к БД. Вопрос можно править позже.</div></div>
+            <div class="field__hint">Умный Аналитик преобразует его в SQL и выполнит к БД. Вопрос можно править позже.</div></div>
         </div>
       </div>
 
@@ -2064,7 +2328,6 @@
   </div>
 </div>
 
-<!-- MODAL: редактирование отчёта -->
 <div class="modal" id="reportModal" hidden>
   <div class="modal__backdrop" data-close></div>
   <div class="modal__dialog">

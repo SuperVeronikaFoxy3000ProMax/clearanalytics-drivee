@@ -1,4 +1,4 @@
-"""Rule-router: SQL из семантики (metric, dimension, period, top_n), без подстановки сырого текста в SQL."""
+"""Rule-router: terms → SQL."""
 from __future__ import annotations
 
 import re
@@ -6,9 +6,9 @@ from dataclasses import dataclass, field, asdict
 from typing import Optional
 
 from semantic_layer import semantic, Term, KIND_METRIC, KIND_DIMENSION
-from config import FORCED_LIMIT
+from config import FORCED_LIMIT, DATA_TABLES, PRIMARY_FACT_TABLE
 
-TABLE = "orders"
+TABLE = PRIMARY_FACT_TABLE
 
 _PERIOD_PATTERNS = [
     (re.compile(r"\b(сегодн|today)"), "DATE(order_timestamp) = CURDATE()", "сегодня"),
@@ -16,6 +16,14 @@ _PERIOD_PATTERNS = [
     (re.compile(r"прошл\w*\s+недел"), "order_timestamp >= CURDATE() - INTERVAL 7 DAY AND order_timestamp < CURDATE()", "прошлая неделя"),
     (re.compile(r"(за|на)\s+недел"), "order_timestamp >= CURDATE() - INTERVAL 7 DAY", "за неделю"),
     (re.compile(r"прошл\w*\s+месяц"), "YEAR(order_timestamp) = YEAR(CURDATE() - INTERVAL 1 MONTH) AND MONTH(order_timestamp) = MONTH(CURDATE() - INTERVAL 1 MONTH)", "прошлый месяц"),
+    (
+        re.compile(
+            r"(?:\b(?:текущ\w*|этот)\s+месяц\b|\bcurrent\s+month\b|"
+            r"\bв\s+этом\s+месяц\w*\b|\bза\s+(?:текущ\w*|этот)\s+месяц\b)"
+        ),
+        "YEAR(order_timestamp) = YEAR(CURDATE()) AND MONTH(order_timestamp) = MONTH(CURDATE())",
+        "текущий месяц",
+    ),
     (re.compile(r"\bполгод"), "order_timestamp >= CURDATE() - INTERVAL 6 MONTH", "за полгода"),
     (re.compile(r"\bквартал"), "order_timestamp >= CURDATE() - INTERVAL 3 MONTH", "за квартал"),
     (re.compile(r"(за|на|последн\w*)\s+(\d{1,2})\s+месяц"), None, None),
@@ -25,6 +33,7 @@ _PERIOD_PATTERNS = [
 ]
 
 _N_MONTHS_RE = re.compile(r"(?:за|на|последн\w*)\s+(\d{1,2})\s+месяц")
+_N_MONTHS_LABEL_RE = re.compile(r"за\s+(\d{1,2})\s+мес", re.IGNORECASE)
 _N_WEEKS_RE = re.compile(r"(?:за|на|последн\w*)\s+(\d{1,2})\s+недел")
 _N_DAYS_RE = re.compile(r"(?:за|на|последн\w*)\s+(\d{1,3})\s+(?:дн|ден)")
 
@@ -76,6 +85,31 @@ class RouterResult:
 
 class RuleRouter:
 
+    @staticmethod
+    def _resolve_from_table(plan: QueryPlan) -> str:
+        parts: list[str] = []
+        if plan.metric:
+            for x in (plan.metric.column_expr, plan.metric.agg or "", plan.metric.filter_sql or ""):
+                parts.append(x)
+        for d in plan.dimensions:
+            parts.append(d.column_expr)
+        blob = " ".join(parts)
+        for t in DATA_TABLES:
+            if f"{t}." in blob:
+                return t
+        return TABLE
+
+    @staticmethod
+    def _adapt_expr_for_table(from_table: str, expr: Optional[str]) -> Optional[str]:
+        if not expr or from_table == "incity":
+            return expr
+        e = expr
+        if from_table == "pass_detail":
+            e = e.replace("order_timestamp", "order_date_part")
+        elif from_table == "driver_detail":
+            e = e.replace("order_timestamp", "tender_date_part")
+        return e
+
     def build(self, query: str) -> RouterResult:
         terms = semantic.find_in_query(query)
         metric = next((t for t in terms if t.kind == KIND_METRIC), None)
@@ -107,6 +141,10 @@ class RuleRouter:
             )
             dimensions = [month_dim]
 
+        period_sql, period_label, dimensions = self._calendar_month_bucket_for_n_months_window(
+            period_sql, period_label, dimensions
+        )
+
         plan = QueryPlan(
             metric=metric,
             dimensions=dimensions,
@@ -127,6 +165,43 @@ class RuleRouter:
         col = (term.column_expr or "").lower()
         t = (term.term or "").lower()
         return "month(" in col or "month" in col or "месяц" in t
+
+    @staticmethod
+    def _calendar_month_bucket_for_n_months_window(
+        period_sql: Optional[str],
+        period_label: Optional[str],
+        dimensions: list[Term],
+    ) -> tuple[Optional[str], Optional[str], list[Term]]:
+        if not period_sql or not period_label:
+            return period_sql, period_label, dimensions
+        m = _N_MONTHS_LABEL_RE.search(period_label)
+        if not m or not any(RuleRouter._is_month_dim(d) for d in dimensions):
+            return period_sql, period_label, dimensions
+        n = max(1, min(int(m.group(1)), 36))
+        new_sql = (
+            "order_timestamp >= DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), "
+            f"INTERVAL {n - 1} MONTH) "
+            "AND order_timestamp < DATE_FORMAT(CURDATE(), '%Y-%m-01') + INTERVAL 1 MONTH"
+        )
+        new_dims: list[Term] = []
+        for d in dimensions:
+            col = (d.column_expr or "").lower()
+            if RuleRouter._is_month_dim(d) and "date_format" not in col:
+                new_dims.append(
+                    Term(
+                        term=d.term,
+                        kind=d.kind,
+                        column_expr="DATE_FORMAT(order_timestamp, '%Y-%m')",
+                        agg=d.agg,
+                        filter_sql=d.filter_sql,
+                        synonyms=list(d.synonyms or []),
+                        is_user_added=d.is_user_added,
+                        id=d.id,
+                    )
+                )
+            else:
+                new_dims.append(d)
+        return new_sql, period_label, new_dims
 
     def _detect_period(self, query: str) -> tuple[Optional[str], Optional[str]]:
         q = query.lower()
@@ -171,19 +246,23 @@ class RuleRouter:
         if not plan.metric and not plan.dimensions:
             return None
 
+        from_table = self._resolve_from_table(plan)
+
         select_parts: list[str] = []
         group_parts: list[str] = []
 
         for dim in plan.dimensions:
-            alias = self._alias_for(dim.column_expr)
-            select_parts.append(f"{dim.column_expr} AS {alias}")
-            group_parts.append(dim.column_expr)
+            dexpr = self._adapt_expr_for_table(from_table, dim.column_expr) or dim.column_expr
+            alias = self._alias_for(dexpr)
+            select_parts.append(f"{dexpr} AS {alias}")
+            group_parts.append(dexpr)
 
         agg_alias = None
         if plan.metric:
             if plan.metric.agg:
                 agg_alias = self._metric_alias(plan.metric)
-                select_parts.append(f"{plan.metric.agg} AS {agg_alias}")
+                agg_e = self._adapt_expr_for_table(from_table, plan.metric.agg) or plan.metric.agg
+                select_parts.append(f"{agg_e} AS {agg_alias}")
             else:
                 agg_alias = "count"
                 select_parts.append("COUNT(*) AS count")
@@ -193,19 +272,22 @@ class RuleRouter:
 
         where_parts: list[str] = []
         if plan.metric and plan.metric.filter_sql:
-            where_parts.append(f"({plan.metric.filter_sql})")
+            fe = self._adapt_expr_for_table(from_table, plan.metric.filter_sql) or plan.metric.filter_sql
+            where_parts.append(f"({fe})")
         for dim in plan.dimensions:
-            where_parts.append(f"{dim.column_expr} IS NOT NULL")
+            dexpr = self._adapt_expr_for_table(from_table, dim.column_expr) or dim.column_expr
+            where_parts.append(f"{dexpr} IS NOT NULL")
         if plan.period_sql:
-            where_parts.append(f"({plan.period_sql})")
+            pe = self._adapt_expr_for_table(from_table, plan.period_sql) or plan.period_sql
+            where_parts.append(f"({pe})")
 
-        sql = "SELECT " + ", ".join(select_parts) + f"\nFROM {TABLE}"
+        sql = "SELECT " + ", ".join(select_parts) + f"\nFROM {from_table}"
         if where_parts:
             sql += "\nWHERE " + "\n  AND ".join(where_parts)
         if group_parts:
             sql += "\nGROUP BY " + ", ".join(group_parts)
 
-        order_col = self._choose_order(plan, agg_alias)
+        order_col = self._choose_order(plan, agg_alias, from_table=from_table)
         if order_col:
             sql += f"\nORDER BY {order_col}"
 
@@ -213,10 +295,13 @@ class RuleRouter:
         sql += f"\nLIMIT {limit}"
         return sql
 
-    def _choose_order(self, plan: QueryPlan, agg_alias: Optional[str]) -> Optional[str]:
+    def _choose_order(
+        self, plan: QueryPlan, agg_alias: Optional[str], *, from_table: str
+    ) -> Optional[str]:
         for dim in plan.dimensions:
-            if "order_timestamp" in dim.column_expr:
-                return self._alias_for(dim.column_expr) + " ASC"
+            dex = self._adapt_expr_for_table(from_table, dim.column_expr) or dim.column_expr
+            if "order_timestamp" in dex or "order_date_part" in dex or "tender_date_part" in dex:
+                return self._alias_for(dex) + " ASC"
         if agg_alias:
             return f"{agg_alias} DESC"
         return None

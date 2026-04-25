@@ -9,9 +9,9 @@ import sqlparse
 import sqlglot
 from sqlglot import expressions as exp
 
-from config import FORCED_LIMIT
+from config import FORCED_LIMIT, DATA_TABLES
 
-ALLOWED_TABLES = {"orders"}
+ALLOWED_TABLES = set(DATA_TABLES)
 
 FORBIDDEN_EXPR_TYPES = (
     exp.Insert, exp.Update, exp.Delete, exp.Drop, exp.Create,
@@ -135,8 +135,12 @@ def performance_warnings(sql: str) -> list[str]:
     low = sql.lower()
     if _SELECT_STAR_RE.search(low):
         warns.append("Использован SELECT * — лучше перечислить нужные колонки.")
-    if " where " not in low and " from orders" in low and "count(" not in low:
-        warns.append("Запрос без WHERE по таблице orders (~935k строк) — возможен долгий скан.")
+    if " where " not in low and "count(" not in low:
+        low_norm = " ".join(low.split())
+        for t in DATA_TABLES:
+            if re.search(rf"\bfrom\s+`?{t}`?\b", low_norm):
+                warns.append(f"Запрос без WHERE по таблице {t} — возможен полный скан.")
+                break
     if "order by" in low and "limit" not in low:
         warns.append("ORDER BY без LIMIT — сортировка всей таблицы.")
     return warns

@@ -1,4 +1,4 @@
-"""NL→SQL: rule-router → guardrails → exec; при необходимости LLM fallback."""
+"""NL→SQL dispatcher."""
 from __future__ import annotations
 
 import re
@@ -122,8 +122,8 @@ def _understanding_from_sql(sql: str) -> dict:
 
 
 def _resolved_term_from_sql(sql: str) -> Optional[str]:
-    """Бизнес-термин по агрегату в SELECT или dimension в тексте SQL."""
     sql_text = sql or ""
+    low = sql_text.lower()
     try:
         tree = sqlglot.parse_one(sql_text, read="mysql")
     except Exception:
@@ -144,18 +144,39 @@ def _resolved_term_from_sql(sql: str) -> Optional[str]:
                     except Exception:
                         pass
 
-    metrics = semantic.list_all(kind="metric")
-    for t in metrics:
-        agg = (t.get("agg") or "").lower().replace(" ", "")
-        if agg and agg in select_aggs:
-            return t["term"]
-
-    low = sql_text.lower()
     dims = semantic.list_all(kind="dimension")
     for t in dims:
         col = (t.get("column_expr") or "").lower()
         if col and col in low:
             return t["term"]
+
+    metrics = semantic.list_all(kind="metric")
+    candidates: list[dict] = []
+    for t in metrics:
+        agg = (t.get("agg") or "").lower().replace(" ", "")
+        if agg and agg in select_aggs:
+            candidates.append(t)
+
+    if candidates:
+        if len(candidates) == 1:
+            return candidates[0]["term"]
+        best: Optional[dict] = None
+        best_score = 0
+        for t in candidates:
+            fs = (t.get("filter_sql") or "").strip().lower()
+            if not fs:
+                continue
+            if fs in low:
+                sc = len(fs)
+            else:
+                parts = [p.strip() for p in re.split(r"\s+and\s+", fs, flags=re.I) if p.strip()]
+                sc = max((len(p) for p in parts if p in low), default=0)
+            if sc > best_score:
+                best_score = sc
+                best = t
+        if best is not None and best_score > 0:
+            return best["term"]
+
     return None
 
 
@@ -288,7 +309,6 @@ def answer(query: str) -> DispatchResult:
 
 
 def recommend_chart(columns: list[str], rows: int) -> str:
-    """Тип графика по числу колонок и признакам времени в первой колонке."""
     if rows == 0:
         return "empty"
     if len(columns) == 1:
@@ -297,5 +317,11 @@ def recommend_chart(columns: list[str], rows: int) -> str:
         first = columns[0].lower()
         if any(m in first for m in ("date", "timestamp", "дат", "день", "month", "месяц")):
             return "line"
+        return "bar"
+    first = columns[0].lower()
+    time_like = any(
+        m in first for m in ("date", "timestamp", "дат", "день", "month", "месяц", "year", "год")
+    )
+    if time_like:
         return "bar"
     return "table"

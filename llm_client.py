@@ -1,4 +1,4 @@
-"""HTTP-клиент к LM Studio: промпт, разбор ответа, транспиляция в MariaDB."""
+"""LM Studio HTTP client."""
 from __future__ import annotations
 
 import re
@@ -12,7 +12,7 @@ import sqlglot
 from sqlalchemy import text
 
 from config import (
-    engine_admin, DB_NAME, LLM_BASE_URL, LLM_MODEL, LLM_TIMEOUT_SEC,
+    engine_admin, DB_NAME, DATA_TABLES, LLM_BASE_URL, LLM_MODEL, LLM_TIMEOUT_SEC,
     LLM_MAX_TOKENS, LLM_TEMPERATURE,
 )
 from semantic_layer import semantic
@@ -35,27 +35,30 @@ class LLMResult:
 
 @lru_cache(maxsize=1)
 def _schema_ddl() -> str:
-    with engine_admin.connect() as c:
-        rows = c.execute(text("""
-            SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_COMMENT
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = :db AND TABLE_NAME = 'orders'
-            ORDER BY ORDINAL_POSITION
-        """), {"db": DB_NAME}).fetchall()
-    lines = ["CREATE TABLE orders ("]
-    if not rows:
-        lines.append("    -- no columns discovered")
+    blocks: list[str] = []
+    for table in DATA_TABLES:
+        with engine_admin.connect() as c:
+            rows = c.execute(
+                text("""
+                    SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_COMMENT
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = :db AND TABLE_NAME = :t
+                    ORDER BY ORDINAL_POSITION
+                """),
+                {"db": DB_NAME, "t": table},
+            ).fetchall()
+        lines = [f"CREATE TABLE {table} ("]
+        if not rows:
+            lines.append("    -- no columns discovered")
+        else:
+            for name, dtype, nullable, comment in rows:
+                nn = "" if nullable == "YES" else " NOT NULL"
+                cm = f"  -- {comment}" if comment else ""
+                lines.append(f"    {name} {dtype.upper()}{nn},{cm}".rstrip(","))
+            lines[-1] = lines[-1].rstrip(",")
         lines.append(");")
-        return "\n".join(lines)
-
-    for name, dtype, nullable, comment in rows:
-        nn = "" if nullable == "YES" else " NOT NULL"
-        cm = f"  -- {comment}" if comment else ""
-        lines.append(f"    {name} {dtype.upper()}{nn},{cm}".rstrip(","))
-
-    lines[-1] = lines[-1].rstrip(",")
-    lines.append(");")
-    return "\n".join(lines)
+        blocks.append("\n".join(lines))
+    return "\n\n".join(blocks)
 
 
 def _semantic_hints() -> str:
@@ -81,7 +84,9 @@ def build_prompt(question: str) -> str:
         "Return your answer as a valid JSON object with keys: sql, explanation, logic_path, stats_template.\n"
         "Rules:\n"
         "- Only SELECT; no INSERT/UPDATE/DELETE/DDL.\n"
-        "- Only the `orders` table is available.\n"
+        "- Only these tables exist: `incity` (детальные заказы/тендеры), "
+        "`pass_detail` (дневные метрики пассажиров), `driver_detail` (дневные метрики водителей). "
+        "Join only when the question requires it; prefer the smallest set of tables.\n"
         "- Always include LIMIT (<= 1000).\n"
         "- When calculating metrics (AVG/SUM/COUNT), ALWAYS add GROUP BY with relevant dimensions.\n"
         "- For aggregates, include at least one dimension column (city, status, month, driver, etc.) to show breakdown.\n"
@@ -89,6 +94,18 @@ def build_prompt(question: str) -> str:
         "- Never return just a single aggregate value without dimensions - users need detailed breakdown.\n"
         "- Prefer simplest query that returns the answer with meaningful grouping.\n"
         "- Russian terms map to columns per the business glossary below.\n"
+        "\n"
+        "### Time periods — CRITICAL\n"
+        "- **Current calendar month** (Russian: «текущий месяц», «этот месяц», «за текущий месяц», «в этом месяце»): "
+        "filter with `YEAR(order_timestamp) = YEAR(CURDATE()) AND MONTH(order_timestamp) = MONTH(CURDATE())` "
+        "(or `order_timestamp >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND order_timestamp < DATE_FORMAT(CURDATE(), '%Y-%m-01') + INTERVAL 1 MONTH`). "
+        "Do **not** use only `MONTH(order_timestamp)` in SELECT/GROUP BY for that — it merges January..December across all years.\n"
+        "- **Trend by month** (explicit: «по месяцам», «помесячно», «динамика по месяцам»): use `DATE_FORMAT(order_timestamp, '%Y-%m')` or both YEAR and MONTH in GROUP BY, with a sensible date range in WHERE.\n"
+        "- **«За N месяцев» + ряд по месяцам**: in WHERE use **exactly N календарных месяцев, включая текущий**: "
+        "`order_timestamp >= DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL N-1 MONTH) "
+        "AND order_timestamp < DATE_FORMAT(CURDATE(), '%Y-%m-01') + INTERVAL 1 MONTH`, "
+        "and `GROUP BY DATE_FORMAT(order_timestamp, '%Y-%m')`. "
+        "Avoid `>= CURRENT_DATE - INTERVAL N MONTH` together with only `MONTH(...)` — the sliding window often crosses **more than N** month numbers and `MONTH()` drops the year.\n"
         "\n"
         "### OUTPUT FORMAT (JSON)\n"
         "{\n"

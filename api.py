@@ -576,12 +576,30 @@ def show_chart(query: str, chart_type: str = "auto"):
 def _build_fig(df: pd.DataFrame, chart_type: str):
     if len(df.columns) == 0:
         return None
-    x = str(df.columns[0])
-    y = str(df.columns[1]) if len(df.columns) > 1 else x
+    cols = [str(c) for c in df.columns]
+    x = cols[0]
+    y = cols[1] if len(cols) > 1 else x
+
+    if len(cols) >= 3 and chart_type in ("bar", "line", "area"):
+        hue = cols[1]
+        y_agg = cols[-1]
+        d = df.sort_values(by=[x, hue])
+        title = f"{y_agg} по {x} · {hue}"
+        if chart_type == "line":
+            return px.line(d, x=x, y=y_agg, color=hue, markers=True, title=title)
+        if chart_type == "area":
+            return px.bar(d, x=x, y=y_agg, color=hue, barmode="group", title=title)
+        return px.bar(d, x=x, y=y_agg, color=hue, barmode="group", title=title)
+
     if chart_type == "line":
         return px.line(df.sort_values(by=x), x=x, y=y, markers=True,
                        title=f"{y} по {x}")
     if chart_type == "pie":
+        if len(cols) >= 3:
+            d = df.copy()
+            lab_col = "_pie_lbl"
+            d[lab_col] = d[cols[0]].astype(str) + " · " + d[cols[1]].astype(str)
+            return px.pie(d, names=lab_col, values=cols[-1], title=f"Распределение {cols[-1]}")
         return px.pie(df, names=x, values=y, title=f"Распределение {y}")
     if chart_type == "kpi":
         return px.bar(df, x=x, y=y, title=f"{y}")
@@ -786,7 +804,7 @@ def test_telegram_delivery(payload: dict = Body(...)):
             f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
             json={
                 "chat_id": chat_id,
-                "text": "✅ Тест InstantData: доставка в этот чат работает.",
+                "text": "✅ Тест «Умный Аналитик»: доставка в этот чат работает.",
             },
             timeout=20,
         )

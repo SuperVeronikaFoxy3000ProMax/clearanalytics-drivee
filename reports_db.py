@@ -92,7 +92,7 @@ def _seed_reports_if_empty() -> None:
                 (
                     "Отмены по городам · неделя",
                     "Покажи отмены по городам за прошлую неделю",
-                    "SELECT city_id, COUNT(*) AS cancels FROM orders WHERE status_order = 'cancel' "
+                    "SELECT city_id, COUNT(*) AS cancels FROM incity WHERE status_order = 'cancel' "
                     "AND order_timestamp >= NOW() - INTERVAL 7 DAY GROUP BY city_id ORDER BY cancels DESC LIMIT 50",
                     "bar",
                     1, "weekly", "Пн", "09:00",
@@ -101,7 +101,7 @@ def _seed_reports_if_empty() -> None:
                 (
                     "Выручка по месяцам · 2025",
                     "Покажи выручку по месяцам в 2025",
-                    "SELECT MONTH(driverdone_timestamp) AS month, SUM(price_order_local) AS revenue FROM orders "
+                    "SELECT MONTH(driverdone_timestamp) AS month, SUM(price_order_local) AS revenue FROM incity "
                     "WHERE status_order = 'done' AND YEAR(driverdone_timestamp) = 2025 "
                     "GROUP BY MONTH(driverdone_timestamp) ORDER BY month LIMIT 200",
                     "line",
@@ -109,10 +109,10 @@ def _seed_reports_if_empty() -> None:
                     "both", None, "ivan@company.ru", "pdf",
                 ),
                 (
-                    "Доля отмен по каналам",
-                    "Покажи долю отмен по каналам app, web, partner",
-                    "SELECT source_name, COUNT(*) AS cancels FROM orders WHERE status_order = 'cancel' "
-                    "GROUP BY source_name ORDER BY cancels DESC LIMIT 20",
+                    "Отмены по городам (доля)",
+                    "Покажи долю отмен по городам",
+                    "SELECT city_id, COUNT(*) AS cancels FROM incity WHERE status_order = 'cancel' "
+                    "GROUP BY city_id ORDER BY cancels DESC LIMIT 20",
                     "pie",
                     1, "monthly", "1", "09:00",
                     "both", None, "ivan@company.ru", "pdf",
@@ -120,7 +120,7 @@ def _seed_reports_if_empty() -> None:
                 (
                     "Активные пользователи · 30д",
                     "Покажи активных пользователей по дням за последние 30 дней",
-                    "SELECT DATE(order_timestamp) AS day, COUNT(DISTINCT user_id) AS active_users FROM orders "
+                    "SELECT DATE(order_timestamp) AS day, COUNT(DISTINCT user_id) AS active_users FROM incity "
                     "WHERE order_timestamp >= NOW() - INTERVAL 30 DAY GROUP BY DATE(order_timestamp) "
                     "ORDER BY day LIMIT 100",
                     "area",
@@ -130,18 +130,18 @@ def _seed_reports_if_empty() -> None:
                 (
                     "Топ-10 водителей",
                     "Покажи топ 10 водителей по количеству поездок",
-                    "SELECT driver_id, COUNT(*) AS rides FROM orders WHERE status_order = 'done' "
+                    "SELECT driver_id, COUNT(*) AS rides FROM incity WHERE status_order = 'done' "
                     "GROUP BY driver_id ORDER BY rides DESC LIMIT 10",
                     "table",
                     0, "weekly", "Пн", "09:00",
                     "both", None, "ivan@company.ru", "xlsx",
                 ),
                 (
-                    "Эффективность рекламы",
-                    "Покажи эффективность рекламных кампаний за 14 дней",
-                    "SELECT source_name, COUNT(*) AS rides, AVG(price_order_local) AS avg_check FROM orders "
-                    "WHERE order_timestamp >= NOW() - INTERVAL 14 DAY GROUP BY source_name "
-                    "ORDER BY rides DESC LIMIT 30",
+                    "Средний чек по городам",
+                    "Покажи средний чек по городам за 14 дней",
+                    "SELECT city_id, COUNT(*) AS rides, AVG(price_order_local) AS avg_check FROM incity "
+                    "WHERE order_timestamp >= NOW() - INTERVAL 14 DAY AND status_order = 'done' "
+                    "GROUP BY city_id ORDER BY rides DESC LIMIT 30",
                     "bar",
                     1, "weekly", "Пт", "17:00",
                     "both", None, "ivan@company.ru", "pdf",

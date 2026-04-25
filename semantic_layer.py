@@ -11,7 +11,8 @@ from typing import Optional
 
 from sqlalchemy import text
 
-from config import engine_admin, DB_NAME
+from config import engine_admin, DB_NAME, DATA_TABLES
+from seed_tuples import SEED as _SEED_TUPLES
 
 DB_PATH = Path(__file__).parent / "semantic_layer.db"
 
@@ -25,7 +26,6 @@ KIND_TRIP      = "trip"
 KIND_STATUS    = "status"
 VALID_KINDS = {KIND_METRIC, KIND_DIMENSION, KIND_FILTER, KIND_PERIOD,
                KIND_ID, KIND_TIME, KIND_TRIP, KIND_STATUS}
-
 
 @dataclass
 class Term:
@@ -44,6 +44,23 @@ class Term:
         d = asdict(self)
         d["synonyms"] = self.synonyms or []
         return d
+
+
+_TUPLE_KIND = {
+    "id": KIND_ID,
+    "status": KIND_STATUS,
+    "time": KIND_TIME,
+    "trip": KIND_TRIP,
+    "metric": KIND_METRIC,
+    "dimension": KIND_DIMENSION,
+}
+
+
+def _build_seed_terms() -> list[Term]:
+    return [
+        Term(term, _TUPLE_KIND[kind], col, agg, flt, list(syns or []))
+        for term, kind, col, agg, flt, syns in _SEED_TUPLES
+    ]
 
 
 _SCHEMA = """
@@ -74,78 +91,7 @@ CREATE INDEX IF NOT EXISTS idx_terms_kind ON terms(kind);
 """
 
 
-_SEED: list[Term] = [
-    Term("город (id)",             KIND_ID,        "city_id",                      None, None,
-         ["город", "city", "регион"]),
-    Term("часовой пояс",           KIND_ID,        "offset_hours",                 None, None,
-         ["UTC", "timezone", "пояс"]),
-    Term("заказ",                  KIND_ID,        "order_id",                     None, None,
-         ["заказ", "order", "поездка"]),
-    Term("тендер",                 KIND_ID,        "tender_id",                    None, None,
-         ["тендер", "подбор", "аукцион"]),
-    Term("пользователь (клиент)",  KIND_ID,        "user_id",                      None, None,
-         ["клиент", "user", "пассажир"]),
-    Term("водитель",               KIND_ID,        "driver_id",                    None, None,
-         ["водители", "driver", "drivers", "топ водителей", "исполнитель"]),
-
-    Term("статус заказа",          KIND_STATUS,    "status_order",                 None, None,
-         ["статус", "отмена", "выполнен", "cancelled", "completed", "by status"]),
-    Term("статус тендера",         KIND_STATUS,    "status_tender",                None, None,
-         ["подбор", "тендер", "auction"]),
-
-    Term("создание заказа",        KIND_TIME,      "order_timestamp",              None, None,
-         ["создан", "заказан", "created_at"]),
-    Term("начало тендера",         KIND_TIME,      "tender_timestamp",             None, None,
-         ["подбор", "tender"]),
-    Term("принятие водителем",     KIND_TIME,      "driveraccept_timestamp",       None, None,
-         ["accept", "назначен", "взял заказ"]),
-    Term("прибытие водителя",      KIND_TIME,      "driverarrived_timestamp",      None, None,
-         ["подача", "arrived", "приехал"]),
-    Term("начало поездки",         KIND_TIME,      "driverstarttheride_timestamp", None, None,
-         ["start", "поехали", "старт"]),
-    Term("завершение поездки",     KIND_TIME,      "driverdone_timestamp",         None, None,
-         ["done", "completed", "финиш", "закончилась"]),
-    Term("отмена клиентом",        KIND_TIME,      "clientcancel_timestamp",       None, None,
-         ["клиент отменил", "client cancel"]),
-    Term("отмена водителем",       KIND_TIME,      "drivercancel_timestamp",       None, None,
-         ["водитель отменил", "driver cancel"]),
-    Term("последнее изменение",    KIND_TIME,      "order_modified_local",         None, None,
-         ["updated", "изменён"]),
-    Term("отмена до принятия",     KIND_TIME,      "cancel_before_accept_local",   None, None,
-         ["pre-accept cancel", "быстрая отмена"]),
-
-    Term("расстояние",             KIND_TRIP,      "distance_in_meters",           None, None,
-         ["дистанция", "distance", "км", "метры"]),
-    Term("длительность",           KIND_TRIP,      "duration_in_seconds",          None, None,
-         ["время поездки", "duration", "секунды", "минуты"]),
-    Term("стоимость заказа",       KIND_TRIP,      "price_order_local",            None, None,
-         ["цена", "price", "итог", "стоимость"]),
-    Term("стоимость тендера",      KIND_TRIP,      "price_tender_local",           None, None,
-         ["тендерная цена", "tender price"]),
-    Term("стартовая стоимость",    KIND_TRIP,      "price_start_local",            None, None,
-         ["начальная цена", "start price"]),
-
-    Term("отмены",                 KIND_METRIC,    "status_order",  "COUNT(*)",
-         "status_order = 'cancel'",
-         ["отмена", "отменен", "canceled", "cancelled", "cancel"]),
-    Term("поездки",                KIND_METRIC,    "status_order",  "COUNT(*)",
-         "status_order = 'done'",
-         ["поездка", "заказы", "ride", "rides", "order", "orders", "trips"]),
-    Term("выручка",                KIND_METRIC,    "price_order_local", "SUM(price_order_local)",
-         "price_order_local IS NOT NULL AND status_order = 'done'",
-         ["доход", "revenue", "оборот", "sales", "gmv"]),
-    Term("средняя цена",           KIND_METRIC,    "price_order_local", "AVG(price_order_local)",
-         "price_order_local IS NOT NULL",
-         ["цена", "price", "средний чек", "стоимость", "avg price"]),
-    Term("город",                  KIND_DIMENSION, "city_id",           None, None,
-         ["города", "city", "cities", "по городам"]),
-    Term("дата",                   KIND_DIMENSION, "DATE(order_timestamp)", None, None,
-         ["день", "дни", "date", "dates", "по датам", "по дням"]),
-    Term("месяц",                  KIND_DIMENSION, "MONTH(order_timestamp)", None, None,
-         ["месяц", "month", "по месяцам"]),
-    Term("статус",                 KIND_DIMENSION, "status_order",      None, None,
-         ["статусы", "status", "by status"]),
-]
+_SEED: list[Term] = _build_seed_terms()
 
 
 class DynamicSemanticLayer:
@@ -158,6 +104,7 @@ class DynamicSemanticLayer:
         self._init_db()
         self._load_schema_columns()
         self._seed_if_empty()
+        self._merge_new_seed_terms()
         self._rebuild_cache()
 
     def _conn(self) -> sqlite3.Connection:
@@ -170,15 +117,35 @@ class DynamicSemanticLayer:
             c.executescript(_SCHEMA)
 
     def _load_schema_columns(self) -> None:
+        self._schema_qualified: set[str] = set()
+        self._schema_columns: set[str] = set()
         try:
             with engine_admin.connect() as conn:
-                rows = conn.execute(text("""
-                    SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-                    WHERE TABLE_SCHEMA = :db AND TABLE_NAME = 'orders'
-                """), {"db": DB_NAME}).fetchall()
-            self._schema_columns = {r[0] for r in rows}
+                for table in DATA_TABLES:
+                    rows = conn.execute(
+                        text("""
+                            SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                            WHERE TABLE_SCHEMA = :db AND TABLE_NAME = :t
+                        """),
+                        {"db": DB_NAME, "t": table},
+                    ).fetchall()
+                    for (cname,) in rows:
+                        self._schema_qualified.add(f"{table}.{cname}")
+                        self._schema_columns.add(cname)
         except Exception:
             self._schema_columns = set()
+            self._schema_qualified = set()
+
+    def _merge_new_seed_terms(self) -> None:
+        with self._conn() as c:
+            for t in _SEED:
+                c.execute(
+                    "INSERT OR IGNORE INTO terms(term,kind,column_expr,agg,filter_sql,synonyms_json,is_user_added) "
+                    "VALUES(?,?,?,?,?,?,0)",
+                    (t.term, t.kind, t.column_expr, t.agg, t.filter_sql,
+                     json.dumps(t.synonyms or [], ensure_ascii=False)),
+                )
+            c.commit()
 
     def _seed_if_empty(self) -> None:
         with self._conn() as c:
@@ -192,6 +159,7 @@ class DynamicSemanticLayer:
                     (t.term, t.kind, t.column_expr, t.agg, t.filter_sql,
                      json.dumps(t.synonyms or [], ensure_ascii=False)),
                 )
+            c.commit()
 
     def _rebuild_cache(self) -> None:
         with self._lock, self._conn() as c:
@@ -231,11 +199,20 @@ class DynamicSemanticLayer:
         import re
         tokens = re.findall(r"[A-Za-z_][A-Za-z0-9_]*", expr)
         sql_funcs = {"DATE", "COUNT", "SUM", "AVG", "MIN", "MAX", "DAY", "MONTH",
-                     "YEAR", "HOUR", "CAST", "IFNULL", "COALESCE"}
-        unknown = [t for t in tokens if t.upper() not in sql_funcs
-                   and t not in self._schema_columns]
+                     "YEAR", "HOUR", "CAST", "IFNULL", "COALESCE", "DATE_FORMAT",
+                     "CURDATE", "INTERVAL", "NOW", "DISTINCT", "WEEK", "HOUR",
+                     "MINUTE", "SECOND"}
+        known_tables = set(DATA_TABLES)
+        unknown = []
+        for t in tokens:
+            u = t.upper()
+            if u in sql_funcs or t in known_tables:
+                continue
+            if t in self._schema_columns:
+                continue
+            unknown.append(t)
         if unknown:
-            return False, f"Неизвестные колонки: {', '.join(unknown)}"
+            return False, f"Неизвестные колонки/имена: {', '.join(unknown)}"
         return True, "ok"
 
     def get(self, text_in: str) -> Optional[Term]:
