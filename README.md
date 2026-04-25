@@ -39,9 +39,40 @@ pip install -r requirements.txt
    ```text
    TELEGRAM_BOT_TOKEN=ваш_токен
    ```
-   
+
 
 При первом запуске API создаются локальные файлы **`semantic_layer.db`** (словарь терминов) и **`reports.db`** (отчёты и привязки Telegram), если их ещё нет.
+
+## Запуск через Docker (API + Telegram-бот)
+
+### 1) Подготовьте `.env`
+
+Скопируйте `.env.example` в `.env` и заполните:
+
+```text
+TELEGRAM_BOT_TOKEN=ваш_токен
+```
+
+### 2) Сборка и запуск
+
+```bash
+docker compose up --build -d
+```
+
+Откройте UI: **http://127.0.0.1:8000/**
+
+### 3) Логи сервисов
+
+```bash
+docker compose logs -f app
+docker compose logs -f bot
+```
+
+### 4) Остановка
+
+```bash
+docker compose down
+```
 
 ## Запуск веб-приложения
 
